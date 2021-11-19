@@ -14,8 +14,8 @@ if yes_no == 'y' or yes_no == 'Y' or yes_no == 'Yes' or yes_no == 'YES':
             app = file1.read()
             app = json.loads(app)
             line = (app['ConnectionStrings']['PostgreConnection'].split(";"))
-            OldDbName = line[2].split("=")[1]
-            OldDbPassword = line[4].split("=")[1]
+            DbName = line[2].split("=")[1]
+            DbPassword = line[4].split("=")[1]
     except:
         d1 = subprocess.check_output(f' sudo -u postgres psql --command "SELECT datname FROM pg_database  WHERE datistemplate = false;"'.format('testsim@123'), shell=True)
         d1 = d1.decode('UTF-8')
