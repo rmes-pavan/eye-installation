@@ -100,7 +100,7 @@ Ip = c.decode('UTF-8')
 Ip = (Ip.split("\n")[0]).strip()
 
 subprocess.call(f'sudo sed -i "2s/.*/      API_URL: \'http:\/\/{Ip}\/api\',/g" /var/www/eye-ui/assets/config.js'.format('testsim@123'), shell=True)
-subprocess.call(f'sudo sed -i "3s/.*/      WS_URL: \'http:\/\/{Ip}\/notify\'/g\" /var/www/eye-ui/assets/config.js'.format('testsim@123'), shell=True)
+subprocess.call(f'sudo sed -i "3s/.*/      WS_URL: \'http:\/\/{Ip}\/notify\',/g\" /var/www/eye-ui/assets/config.js'.format('testsim@123'), shell=True)
 
 subprocess.call(f"sudo systemctl daemon-reload".format('testsim@123'), shell=True)
 subprocess.call(f"sudo systemctl enable kestrel-eyeapi.service".format('testsim@123'), shell=True)
