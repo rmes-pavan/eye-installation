@@ -285,7 +285,7 @@ if [ -f /srv/eye.communicator/appsettings.json ];then
 
           #Changing the ipaddress in the config.js file
           refreshPermissions "$$" & sudo sed -i "2s/.*/      API_URL: 'http:\/\/${IP[1]}\/api',/g" /var/www/eye-ui/assets/config.js
-          refreshPermissions "$$" & sudo sed -i "3s/.*/      WS_URL: 'http:\/\/${IP[1]}\/notify'/g" /var/www/eye-ui/assets/config.js
+          refreshPermissions "$$" & sudo sed -i "3s/.*/      WS_URL: 'http:\/\/${IP[1]}\/notify',/g" /var/www/eye-ui/assets/config.js
 
           #Edit appsettings
           #refreshPermissions "$$" & sudo sed -i '22s/.*/    "PostgreConnection": "Host=localhost;Port=5432;Database=${DB};Username=rmtest;Password=hotandcold;Pooling=true;MinPoolSize=1;MaxPoolSize=95;ConnectionLifeTime=15;"/' /srv/eye.service/appsettings.json
