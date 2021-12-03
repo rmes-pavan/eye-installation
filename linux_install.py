@@ -1,8 +1,9 @@
 import subprocess
 import json
+from getpass import getpass
 
 DbName = 'rmdb1'
-DbPassword = 'hotandold'
+DbPassword = 'hotandcold'
 
 yes_no = input("Do you want to use the same Db that your are using previously y/n : ")
 
@@ -22,13 +23,14 @@ if yes_no == 'y' or yes_no == 'Y' or yes_no == 'Yes' or yes_no == 'YES':
         print(d1)
         print("Not able to read previous json files")
         DbName = input('Give me the data base you have:')
+        print("password will not be shown)
         DbPassword = input('Give the password of your data base: ')
 else:
     d1 = subprocess.check_output(f' sudo -u postgres psql --command "SELECT datname FROM pg_database  WHERE datistemplate = false;"'.format('testsim@123'), shell=True)
     d1 = d1.decode('UTF-8')
     print(d1)
     DbName = input('Give me the data base you have:')
-    DbPassword = input('Give the password of your data base: ')
+    DbPassword = getpass('Give the password of your data base: ')
 
 
 
