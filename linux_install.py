@@ -51,6 +51,8 @@ subprocess.call('sudo rm -f /etc/systemd/system/kestrel-eyenotify.service'.forma
 subprocess.call('sudo service kestrel-eyescheduler stop'.format('testsim@123'), shell=True)
 subprocess.call('sudo rm -f /etc/systemd/system/kestrel-eyescheduler.service'.format('testsim@123'), shell=True)
 
+# Removing the nginx.config
+subprocess.call('sudo rm -f /etc/nginx/nginx.conf'.format('testsim@123'), shell=True)
 
 
 #Taking maps backup if any
@@ -72,6 +74,9 @@ subprocess.call('sudo cp -r eye.api /var/www/'.format('testsim@123'), shell=True
 subprocess.call('sudo cp -r eye-ui /var/www/'.format('testsim@123'), shell=True)
 subprocess.call('sudo cp -r eye.notifier /srv/'.format('testsim@123'), shell=True)
 subprocess.call('sudo cp -r eye.scheduler /srv/'.format('testsim@123'), shell=True)
+
+#coping the nginx config file
+subprocess.call('sudo cp services/nginx.conf /etc/nginx/'.format('testsim@123'), shell=True)
 
 
 #coping the service files
