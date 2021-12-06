@@ -52,6 +52,7 @@ subprocess.call('sudo service kestrel-eyescheduler stop'.format('testsim@123'), 
 subprocess.call('sudo rm -f /etc/systemd/system/kestrel-eyescheduler.service'.format('testsim@123'), shell=True)
 
 # Removing the nginx.config
+subprocess.call('sudo service nginx stop'.format('testsim@123'), shell=True)
 subprocess.call('sudo rm -f /etc/nginx/nginx.conf'.format('testsim@123'), shell=True)
 
 
@@ -116,6 +117,7 @@ subprocess.call(f"sudo systemctl enable kestrel-eyenotify.service".format('tests
 subprocess.call(f"sudo systemctl enable kestrel-eyescheduler.service".format('testsim@123'), shell=True)
 
 
+subprocess.call(f"sudo service nginx start".format('testsim@123'), shell=True)
 subprocess.call(f"sudo service kestrel-eyeapi start".format('testsim@123'), shell=True)
 subprocess.call(f"sudo service kestrel-eye start".format('testsim@123'), shell=True)
 subprocess.call(f"sudo service kestrel-eyenotify start".format('testsim@123'), shell=True)
