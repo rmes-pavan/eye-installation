@@ -12,37 +12,55 @@ refreshPermissions () {
 
 if psql -V | grep "13";then
   echo -e "\e[1;32m ==========Postgresql already installed========== \e[0m"
-  dbarray=$(sudo -S -u postgres psql -t -A -c "SELECT datname FROM pg_database WHERE datname <> ALL ('{template0,template1,postgres}')")
-
-  #To save multiline list to array and echo them in serial order
-  SAVEIFS=$IFS
-  IFS=$'\n'
-  dbarray=($dbarray)
-  IFS=$SAVEIFS
-  echo -e "\e[1;36m Database List \e[0m"
-  for ((i=0; i<${#dbarray[@]} ; i++ )); do
-      echo "$i. ${dbarray[$i]}"
-  done
-  echo "Select one of the above database to be used"
-  read db
-  DbName=${dbarray[$db]}
-  #echo "${dbarray[$db]}"
-
- #For Selecting the default password OR giving the new password
-  echo -e "\e[1;36m Default Passwords List \e[0m"
-  pword=(rmtest,hotandcold)
-  IFS="," read -a pword <<< $pword;
-  for ((i=0; i<${#pword[@]} ; i++ )); do
-        echo "$i. ${pword[$i]}"
-  done
-  echo "Select one of the above password OR give the new password"
-  read pass
-  if [[ "$pass" == 0 ]];then
-    passw=${pword[$pass]}
-  elif [[ "$pass" == 1 ]];then
-    passw=${pword[$pass]}
+  present_working_dir=$(pwd)
+  #echo "$present_working_dir"
+  read -r -p "Want to use old config [y/n] " response
+  if [[ "$response" =~ ^([yY][eE][sS]|[yY])$ ]]
+  then
+      #To read the appsetting.json and get the already using database name and password
+      cmd=$(jq '.ConnectionStrings.PostgreConnection' /var/www/eye.api/appsettings.json | xargs )
+      IFS=";" read -a cmd <<< $cmd
+      databasename=$(echo "${cmd[2]}")
+      IFS="=" read -a databasename <<< $databasename
+      oldpassword=$(echo "${cmd[4]}")
+      IFS="=" read -a oldpassword <<< $oldpassword
+      echo "---${databasename[1]}--- is the old config database"
+      echo "---${oldpassword[1]}--- is the old config password"
+      DbName=${databasename[1]}
+      passw=${oldpassword[1]}
   else
-    passw=$pass
+      dbarray=$(sudo -S -u postgres psql -t -A -c "SELECT datname FROM pg_database WHERE datname <> ALL ('{template0,template1,postgres}')")
+
+      #To save multiline list to array and echo them in serial order
+      SAVEIFS=$IFS
+      IFS=$'\n'
+      dbarray=($dbarray)
+      IFS=$SAVEIFS
+      echo -e "\e[1;36m Database List \e[0m"
+      for ((i=0; i<${#dbarray[@]} ; i++ )); do
+          echo "$i. ${dbarray[$i]}"
+      done
+      echo "Select one of the above database to be used"
+      read db
+      DbName=${dbarray[$db]}
+      #echo "${dbarray[$db]}"
+
+     #For Selecting the default password OR giving the new password
+      echo -e "\e[1;36m Default Passwords List \e[0m"
+      pword=(rmtest,hotandcold)
+      IFS="," read -a pword <<< $pword;
+      for ((i=0; i<${#pword[@]} ; i++ )); do
+            echo "$i. ${pword[$i]}"
+      done
+      echo "Select one of the above password OR give the new password"
+      read pass
+      if [[ "$pass" == 0 ]];then
+        passw=${pword[$pass]}
+      elif [[ "$pass" == 1 ]];then
+        passw=${pword[$pass]}
+      else
+        passw=$pass
+      fi
   fi
 
 else
@@ -55,6 +73,7 @@ else
   refreshPermissions "$$" & sudo mkdir -p /opt/dotnet && sudo tar zxf aspnetcore-runtime-5.0.10-linux-x64.tar.gz -C /opt/dotnet
   refreshPermissions "$$" & sudo ln -s /opt/dotnet/dotnet /usr/bin
   refreshPermissions "$$" & sudo cp default.conf /etc/nginx/conf.d/
+  refreshPermissions "$$" & sudo cp nginx.conf /etc/nginx/
   refreshPermissions "$$" & sudo service nginx restart
   echo "Creating User rmtest"
   refreshPermissions "$$" & sudo -u postgres createuser rmtest
@@ -100,7 +119,7 @@ if [ -f ~/gw-rmon/bins/watchdog-rmon ]; then
 else
   mkdir ~/rmontmp
   #mv ~/v-0-55-2021-10-13-rmon-gw-x86-bundle.tar.gz ~/rmontmp/
-  tar xvfz v-0-60-2021-11-02-rmon-gw-x86-bundle.tar.gz -C ~/rmontmp/ ; refreshPermissions "$$" & sudo ~/rmontmp/./install-rmon.sh
+  tar xvfz v-0-68-2021-12-06-rmon-gw-x86-bundle.tar.gz -C ~/rmontmp/ ; refreshPermissions "$$" & sudo ~/rmontmp/./install-rmon.sh
 fi
 
 #RM UI software installation
@@ -186,35 +205,35 @@ else
 fi
 
 #Copying Eye api, ui and service files
-refreshPermissions "$$" & sudo cp -r eye.communicator/ /srv/
+refreshPermissions "$$" & sudo cp -r ${present_working_dir}/eye.communicator/ /srv/
 if [ -f /srv/eye.communicator/appsettings.json ];then
   echo -e "\e[1;32m Eye.service copied sucessfully \e[0m"
 else
   echo -e "\e[1;31m Failed to copy Eye.service \e[0m"
 fi
 
-refreshPermissions "$$" & sudo cp -r eye.notifier/ /srv/
+refreshPermissions "$$" & sudo cp -r ${present_working_dir}/eye.notifier/ /srv/
 if [ -f /srv/eye.notifier/appsettings.json ];then
   echo -e "\e[1;32m Eye.notifier copied sucessfully \e[0m"
 else
   echo -e "\e[1;31m Failed to copy Eye.notifier \e[0m"
 fi
 
-refreshPermissions "$$" & sudo cp -r eye.scheduler/ /srv/
+refreshPermissions "$$" & sudo cp -r ${present_working_dir}/eye.scheduler/ /srv/
 if [ -f /srv/eye.scheduler/appsettings.json ];then
   echo -e "\e[1;32m Eye.scheduler copied sucessfully \e[0m"
 else
   echo -e "\e[1;31m Failed to copy Eye.scheduler \e[0m"
 fi
 
-refreshPermissions "$$" & sudo cp -r eye.api/ /var/www/
+refreshPermissions "$$" & sudo cp -r ${present_working_dir}/eye.api/ /var/www/
 if [ -f /var/www/eye.api/appsettings.json ];then
   echo -e "\e[1;32m Eye.api copied sucessfully \e[0m"
 else
   echo -e "\e[1;31m Failed to copy Eye.api \e[0m"
 fi
 
-refreshPermissions "$$" & sudo cp -r eye-ui/ /var/www/
+refreshPermissions "$$" & sudo cp -r ${present_working_dir}/eye-ui/ /var/www/
 if [ -f /var/www/eye-ui/assets/config.js ];then
   echo -e "\e[1;32m Eye-ui copied sucessfully \e[0m"
 else
@@ -255,6 +274,15 @@ if [ -f /srv/eye.communicator/appsettings.json ];then
           refreshPermissions "$$" & sudo sed -i "s/Database=${databasename[1]}/Database=$DbName/g" /var/www/eye.api/appsettings.json
           refreshPermissions "$$" & sudo sed -i "s/Password=${oldpassword[1]}/Password=$passw/g" /var/www/eye.api/appsettings.json
 
+          cmd3=$(whoami)
+          #echo "$cmd3 is the username"
+          expected_path=/home/$cmd3/
+          #echo "Expected path is $expected_path"
+          #cmd5=$(jq '.UploadFilePath.FilePath' /var/www/eye.api/appsettings.Development.json | xargs)
+          refreshPermissions "$$" & sudo sed -i 's/\"FilePath\":.*/\"FilePath\": \"$expected_path\"/g' /var/www/eye.api/appsettings.Development.json
+
+          #jq '.userGeneration.VerificationUrlRoot' /var/www/eye.api/appsettings.Development.json | xargs
+
     #      cmd=$(jq '.ConnectionStrings.PostgreConnection' /srv/eye.service/appsettings.Development.json | xargs )
     #      IFS=";" read -a cmd <<< $cmd
     #      databasename=$(echo "${cmd[2]}")
@@ -285,7 +313,7 @@ if [ -f /srv/eye.communicator/appsettings.json ];then
 
           #Changing the ipaddress in the config.js file
           refreshPermissions "$$" & sudo sed -i "2s/.*/      API_URL: 'http:\/\/${IP[1]}\/api',/g" /var/www/eye-ui/assets/config.js
-          refreshPermissions "$$" & sudo sed -i "3s/.*/      WS_URL: 'http:\/\/${IP[1]}\/notify',/g" /var/www/eye-ui/assets/config.js
+          refreshPermissions "$$" & sudo sed -i "3s/.*/      WS_URL: 'http:\/\/${IP[1]}\/notify'/g" /var/www/eye-ui/assets/config.js
 
           #Edit appsettings
           #refreshPermissions "$$" & sudo sed -i '22s/.*/    "PostgreConnection": "Host=localhost;Port=5432;Database=${DB};Username=rmtest;Password=hotandcold;Pooling=true;MinPoolSize=1;MaxPoolSize=95;ConnectionLifeTime=15;"/' /srv/eye.service/appsettings.json
