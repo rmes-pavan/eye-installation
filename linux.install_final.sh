@@ -9,58 +9,62 @@ refreshPermissions () {
 }
 
 #Postgres/Ngnix/Dotnet
-
 if psql -V | grep "13";then
   echo -e "\e[1;32m ==========Postgresql already installed========== \e[0m"
   present_working_dir=$(pwd)
   #echo "$present_working_dir"
-  read -r -p "Want to use old config [y/n] " response
+  echo "Want to use old config [y/n] "
+  read response
   if [[ "$response" =~ ^([yY][eE][sS]|[yY])$ ]]
   then
-      #To read the appsetting.json and get the already using database name and password
-      cmd=$(jq '.ConnectionStrings.PostgreConnection' /var/www/eye.api/appsettings.json | xargs )
-      IFS=";" read -a cmd <<< $cmd
-      databasename=$(echo "${cmd[2]}")
-      IFS="=" read -a databasename <<< $databasename
-      oldpassword=$(echo "${cmd[4]}")
-      IFS="=" read -a oldpassword <<< $oldpassword
-      echo "---${databasename[1]}--- is the old config database"
-      echo "---${oldpassword[1]}--- is the old config password"
-      DbName=${databasename[1]}
-      passw=${oldpassword[1]}
+    #To read the appsetting.json and get the already using database name and password
+    cmd0=$(jq '.ConnectionStrings.PostgreConnection' /var/www/eye.api/appsettings.json | xargs )
+    IFS=";" read -a cmd0 <<< $cmd0
+    databasename=$(echo "${cmd0[2]}")
+    IFS="=" read -a databasename <<< $databasename
+    oldpassword=$(echo "${cmd0[4]}")
+    IFS="=" read -a oldpassword <<< $oldpassword
+    echo "---${databasename[1]}--- is the old config database"
+    echo "---${oldpassword[1]}--- is the old config password"
+    DbName=${databasename[1]}
+    passw=${oldpassword[1]}
   else
-      dbarray=$(sudo -S -u postgres psql -t -A -c "SELECT datname FROM pg_database WHERE datname <> ALL ('{template0,template1,postgres}')")
+    dbarray=$(sudo -S -u postgres psql -t -A -c "SELECT datname FROM pg_database WHERE datistemplate = false;")
 
-      #To save multiline list to array and echo them in serial order
-      SAVEIFS=$IFS
-      IFS=$'\n'
-      dbarray=($dbarray)
-      IFS=$SAVEIFS
-      echo -e "\e[1;36m Database List \e[0m"
-      for ((i=0; i<${#dbarray[@]} ; i++ )); do
-          echo "$i. ${dbarray[$i]}"
-      done
-      echo "Select one of the above database to be used"
-      read db
-      DbName=${dbarray[$db]}
-      #echo "${dbarray[$db]}"
+    #To save multiline list to array and echo them in serial order
+    SAVEIFS=$IFS
+    IFS=$'\n'
+    dbarray=($dbarray)
+    IFS=$SAVEIFS
+    echo -e "\e[1;36m Database List \e[0m"
+    for ((i=0; i<${#dbarray[@]} ; i++ )); do
+        echo "$i. ${dbarray[$i]}"
+    done
+    echo "Select one of the above database to be used"
+    read db
+    #Condition for checking the input is within the displayed file no or not
+    if (( $db>$i-1 ));then
+      echo "Not a valid Input"
+      exit 1
+    fi
+    DbName=${dbarray[$db]}
 
-     #For Selecting the default password OR giving the new password
-      echo -e "\e[1;36m Default Passwords List \e[0m"
-      pword=(rmtest,hotandcold)
-      IFS="," read -a pword <<< $pword;
-      for ((i=0; i<${#pword[@]} ; i++ )); do
-            echo "$i. ${pword[$i]}"
-      done
-      echo "Select one of the above password OR give the new password"
-      read pass
-      if [[ "$pass" == 0 ]];then
-        passw=${pword[$pass]}
-      elif [[ "$pass" == 1 ]];then
-        passw=${pword[$pass]}
-      else
-        passw=$pass
-      fi
+   #For Selecting the default password OR giving the new password
+    echo -e "\e[1;36m Default Passwords List \e[0m"
+    pword=(rmtest,hotandcold)
+    IFS="," read -a pword <<< $pword;
+    for ((i=0; i<${#pword[@]} ; i++ )); do
+          echo "$i. ${pword[$i]}"
+    done
+    echo "Select one of the above password OR give the new password"
+    read pass
+    if [[ "$pass" == 0 ]];then
+      passw=${pword[$pass]}
+    elif [[ "$pass" == 1 ]];then
+      passw=${pword[$pass]}
+    else
+      passw=$pass
+    fi
   fi
 
 else
@@ -77,9 +81,7 @@ else
   refreshPermissions "$$" & sudo service nginx restart
   echo "Creating User rmtest"
   refreshPermissions "$$" & sudo -u postgres createuser rmtest
-  #refreshPermissions "$$" & sudo -u postgres createuser rmuser1
   echo "Creating Database rmdb1"
-  #refreshPermissions "$$" & sudo timescaledb-tune
   touch ~/.pgpass
   chmod 600 ~/.pgpass
   echo "127.0.0.1:5432:*:postgres:hotandcold" >> ~/.pgpass
@@ -87,21 +89,13 @@ else
   refreshPermissions "$$" & sudo -S sed -i "s/#shared_preload_libraries.*/shared_preload_libraries = \'timescaledb\'/g" /etc/postgresql/13/main/postgresql.conf
   refreshPermissions "$$" & sudo -S sed -i "s/#listen_addresses.*/listen_addresses = \'*\'/g" /etc/postgresql/13/main/postgresql.conf
   refreshPermissions "$$" & sudo -S sed -i "s/host    all             all             127.0.0.1\/32            md5*/host    all             all             0.0.0.0\/0            md5/g" /etc/postgresql/13/main/pg_hba.conf
-  #refreshPermissions "$$" & sudo cp services/postgresql.conf /etc/postgresql/13/main/
-  #refreshPermissions "$$" & sudo cp services/pg_hba.conf /etc/postgresql/13/main/
   refreshPermissions "$$" & sudo -S -u postgres psql --command " alter user rmtest with encrypted password 'hotandcold'; "
   refreshPermissions "$$" & sudo -S -u postgres psql --command " alter user postgres with encrypted password 'hotandcold'; "
-  #refreshPermissions "$$" & sudo -S -u postgres psql --command " alter user rmuser1 with encrypted password 'hotandcold'; "
   refreshPermissions "$$" & sudo -S -u postgres psql --command " grant all privileges on database rmdb1 to rmtest; "
-  #refreshPermissions "$$" & sudo -S -u postgres psql --command " grant all privileges on database rmdb1 to rmuser1; "
   refreshPermissions "$$" & sudo -S -u postgres psql --command " CREATE EXTENSION IF NOT EXISTS pgagent "
   refreshPermissions "$$" & sudo service postgresql restart
   pg_restore -h localhost -p 5432 -U postgres -d rmdb1 -W -v "R_U_S_Unit_Protocol_DF.backup"
   pgagent hostaddr=127.0.0.1 port=5432 dbname=postgres user=postgres
-  #echo "Backing up the database"
-  #read data_base
-  #pg_restore -h localhost -p 5432 -U postgres  -d rmdb1 -W -v $data_base
-  #refreshPermissions "$$" & sudo service postgresql restart
   DbName=rmdb1
   echo "@reboot pgagent hostaddr=127.0.0.1 port=5432 dbname=postgres user=postgres
 @reboot ~/gw-rmon/bins/watchdog-rmon > /dev/null 2>&1 &" | crontab -
@@ -119,125 +113,71 @@ if [ -f ~/gw-rmon/bins/watchdog-rmon ]; then
 else
   mkdir ~/rmontmp
   #mv ~/v-0-55-2021-10-13-rmon-gw-x86-bundle.tar.gz ~/rmontmp/
-  tar xvfz v-0-68-2021-12-06-rmon-gw-x86-bundle.tar.gz -C ~/rmontmp/ ; refreshPermissions "$$" & sudo ~/rmontmp/./install-rmon.sh
+  tar xvfz v-0-94-2022-01-20-rmon-gw-x86-bundle.tar.gz -C ~/rmontmp/ ; refreshPermissions "$$" & sudo ~/rmontmp/./install-rmon.sh
 fi
 
 #RM UI software installation
-#Stopping and Removing the eye-service
-if [ -f /etc/systemd/system/kestrel-eye.service ]; then
-  echo -e "\e[1;32m ==========Stopping eye-service========== \e[0m"
-  refreshPermissions "$$" & sudo service kestrel-eye stop
-  echo -e "\e[1;32m ==========Kestral-eye.service is stopped========== \e[0m"
-  refreshPermissions "$$" & sudo rm /etc/systemd/system/kestrel-eye.service
-  echo -e "\e[1;32m ==========Removed kestrel-eye.service========== \e[0m"
-else
-  echo -e "\e[1;31m ==========Kestrel-eye.service not installed========== \e[0m"
-fi
+# Stopping and Removing the Services
+services=(eye eyeapi eyenotify eyescheduler)
+for ((i=0; i<${#services[@]} ; i++ )); do
+  if [ -f /etc/systemd/system/kestrel-${services[$i]}.service ]; then
+    echo -e "\e[1;32m ==========Stopping ${services[$i]}-service========== \e[0m"
+    refreshPermissions "$$" & sudo service kestrel-${services[$i]} stop
+    echo -e "\e[1;32m ==========Kestral-${services[$i]}.service is stopped========== \e[0m"
+    refreshPermissions "$$" & sudo rm /etc/systemd/system/kestrel-${services[$i]}.service
+    echo -e "\e[1;32m ==========Removed kestrel-${services[$i]}.service========== \e[0m"
+  else
+    echo -e "\e[1;31m ==========Kestrel-${services[$i]}.service not installed========== \e[0m"
+  fi
+done
 
-#Stopping and Removing the api.service
-if [ -f /etc/systemd/system/kestrel-eyeapi.service ]; then
-    echo -e "\e[1;32m ==========Stopping kestrel-eyeapi.service========== \e[0m"
-    refreshPermissions "$$" & sudo service kestrel-eyeapi stop
-    echo -e "\e[1;32m ==========Kestral-eyeapi.sevice is stoped========== \e[0m"
-    refreshPermissions "$$" & sudo rm /etc/systemd/system/kestrel-eyeapi.service
-    echo -e "\e[1;32m ==========Removed kestrel-eyeapi.service========== \e[0m"
-else
-  echo -e "\e[1;31m ==========Kestrel-eyeapi.service not installed========== \e[0m"
-fi
+#Removing & Copying files
+build_folder=(communicator notifier scheduler)
+for ((i=0; i<${#build_folder[@]} ; i++ )); do
+  #Removing communicator, notifier and scheduler files
+  refreshPermissions "$$" & sudo rm -rf /srv/eye.${build_folder[$i]}/
+  if [ -f /srv/eye.${build_folder[$i]}/appsettings.json ];then
+    echo -e "\e[1;31m Failed to remove Eye.${build_folder[$i]} \e[0m"
+  else
+    echo -e "\e[1;31m Eye.${build_folder[$i]} removed sucessfully \e[0m"
+  fi
+  #Copying communicator, notifier and scheduler files
+  refreshPermissions "$$" & sudo cp -r ${present_working_dir}/eye.${build_folder[$i]}/ /srv/
+  if [ -f /srv/eye.${build_folder[$i]}/appsettings.json ];then
+    echo -e "\e[1;32m Eye.${build_folder[$i]} copied sucessfully \e[0m"
+  else
+    echo -e "\e[1;31m Failed to copy Eye.${build_folder[$i]} \e[0m"
+  fi
+done
 
-#Stopping and Removing the notify.service
-if [ -f /etc/systemd/system/kestrel-eyenotify.service ]; then
-    echo -e "\e[1;32m ==========Stopping kestrel-eyenotify.service========== \e[0m"
-    refreshPermissions "$$" & sudo service kestrel-eyenotify stop
-    echo -e "\e[1;32m ==========Kestral-eyenotify.sevice is stoped========== \e[0m"
-    refreshPermissions "$$" & sudo rm /etc/systemd/system/kestrel-eyenotify.service
-    echo -e "\e[1;32m ==========Removed kestrel-eyenotify.service========== \e[0m"
-else
-  echo -e "\e[1;31m ==========Kestrel-eyenotify.service not installed========== \e[0m"
-fi
-
-#Stopping and Removing the scheduler.service
-if [ -f /etc/systemd/system/kestrel-eyescheduler.service ]; then
-    echo -e "\e[1;32m ==========Stopping kestrel-eyescheduler.service========== \e[0m"
-    refreshPermissions "$$" & sudo service kestrel-eyescheduler stop
-    echo -e "\e[1;32m ==========Kestral-eyescheduler.sevice is stoped========== \e[0m"
-    refreshPermissions "$$" & sudo rm /etc/systemd/system/kestrel-eyescheduler.service
-    echo -e "\e[1;32m ==========Removed kestrel-eyescheduler.service========== \e[0m"
-else
-  echo -e "\e[1;31m ==========Kestrel-eyescheduler.service not installed========== \e[0m"
-fi
-
-
-#Remove the Eye api, ui and service files
-refreshPermissions "$$" & sudo rm -rf /srv/eye.communicator/
-if [ -f /srv/eye.communicator/appsettings.json ];then
-  echo -e "\e[1;31m Failed to remove Eye.service \e[0m"
-else
-  echo -e "\e[1;31m Eye.service not installed \e[0m"
-fi
-
-refreshPermissions "$$" & sudo rm -rf /srv/eye.notifier/
-if [ -f /srv/eye.notifier/appsettings.json ];then
-  echo -e "\e[1;31m Failed to remove Eye.notifier \e[0m"
-else
-  echo -e "\e[1;31m Eye.notifier not installed \e[0m"
-fi
-
-refreshPermissions "$$" & sudo rm -rf /srv/eye.scheduler/
-if [ -f /srv/eye.scheduler/appsettings.json ];then
-  echo -e "\e[1;31m Failed to remove Eye.scheduler \e[0m"
-else
-  echo -e "\e[1;31m Eye.scheduler not installed \e[0m"
-fi
-
+#Removing UI files
 refreshPermissions "$$" & sudo rm -rf /var/www/eye-ui/
 if [ -f /var/www/eye-ui/assets/config.js ];then
   echo -e "\e[1;31m Failed to remove Eye-ui \e[0m"
 else
-  echo -e "\e[1;31m Eye-ui not installed \e[0m"
+  echo -e "\e[1;31m Eye-ui removed sucessfully \e[0m"
 fi
-
-refreshPermissions "$$" & sudo rm -rf /var/www/eye.api/
-if [ -f /var/www/eye.api/appsettings.json ];then
-  echo -e "\e[1;31m Failed to remove Eye.api \e[0m"
-else
-  echo -e "\e[1;31m Eye.api not installed \e[0m"
-fi
-
-#Copying Eye api, ui and service files
-refreshPermissions "$$" & sudo cp -r ${present_working_dir}/eye.communicator/ /srv/
-if [ -f /srv/eye.communicator/appsettings.json ];then
-  echo -e "\e[1;32m Eye.service copied sucessfully \e[0m"
-else
-  echo -e "\e[1;31m Failed to copy Eye.service \e[0m"
-fi
-
-refreshPermissions "$$" & sudo cp -r ${present_working_dir}/eye.notifier/ /srv/
-if [ -f /srv/eye.notifier/appsettings.json ];then
-  echo -e "\e[1;32m Eye.notifier copied sucessfully \e[0m"
-else
-  echo -e "\e[1;31m Failed to copy Eye.notifier \e[0m"
-fi
-
-refreshPermissions "$$" & sudo cp -r ${present_working_dir}/eye.scheduler/ /srv/
-if [ -f /srv/eye.scheduler/appsettings.json ];then
-  echo -e "\e[1;32m Eye.scheduler copied sucessfully \e[0m"
-else
-  echo -e "\e[1;31m Failed to copy Eye.scheduler \e[0m"
-fi
-
-refreshPermissions "$$" & sudo cp -r ${present_working_dir}/eye.api/ /var/www/
-if [ -f /var/www/eye.api/appsettings.json ];then
-  echo -e "\e[1;32m Eye.api copied sucessfully \e[0m"
-else
-  echo -e "\e[1;31m Failed to copy Eye.api \e[0m"
-fi
-
+#Copping UI files
 refreshPermissions "$$" & sudo cp -r ${present_working_dir}/eye-ui/ /var/www/
 if [ -f /var/www/eye-ui/assets/config.js ];then
   echo -e "\e[1;32m Eye-ui copied sucessfully \e[0m"
 else
   echo -e "\e[1;31m Failed to copy Eye-ui \e[0m"
+fi
+
+#Removing Api files
+refreshPermissions "$$" & sudo rm -rf /var/www/eye.api/
+if [ -f /var/www/eye.api/appsettings.json ];then
+  echo -e "\e[1;31m Failed to remove Eye.api \e[0m"
+else
+  echo -e "\e[1;31m Eye.api removed sucessfully \e[0m"
+fi
+#Copping Api files
+refreshPermissions "$$" & sudo cp -r ${present_working_dir}/eye.api/ /var/www/
+if [ -f /var/www/eye.api/appsettings.json ];then
+  echo -e "\e[1;32m Eye.api copied sucessfully \e[0m"
+else
+  echo -e "\e[1;31m Failed to copy Eye.api \e[0m"
 fi
 
 #Coping maps to the eye-ui
@@ -254,108 +194,56 @@ if [ -f /srv/eye.communicator/appsettings.json ];then
       if [ -f /srv/eye.notifier/appsettings.json ];then
         if [ -f /srv/eye.scheduler/appsettings.json ];then
           #Reading the .json files and changing the database name and the password
-#         cmd=$(jq '.ConnectionStrings.PostgreConnection' /srv/eye.service/appsettings.json | xargs )
-#         IFS=";" read -a cmd <<< $cmd
-#         databasename=$(echo "${cmd[2]}")
-#         IFS="=" read -a databasename <<< $databasename
-#         oldpassword=$(echo "${cmd[4]}")
-#         IFS="=" read -a oldpassword <<< $oldpassword
-#         #echo "---${databasename[1]}--- database is currently in used"
-#         refreshPermissions "$$" & sudo sed -i "s/Database=${databasename[1]}/Database=$DbName/g" /srv/eye.service/appsettings.json
-#         refreshPermissions "$$" & sudo sed -i "s/Password=${oldpassword[1]}/Password=$passw/g" /srv/eye.service/appsettings.json
-#
-          cmd=$(jq '.ConnectionStrings.PostgreConnection' /var/www/eye.api/appsettings.json | xargs )
-          IFS=";" read -a cmd <<< $cmd
-          databasename=$(echo "${cmd[2]}")
-          IFS="=" read -a databasename <<< $databasename
-          oldpassword=$(echo "${cmd[4]}")
-          IFS="=" read -a oldpassword <<< $oldpassword
-          #echo "---${databasename[1]}--- database is currently in used"
-          refreshPermissions "$$" & sudo sed -i "s/Database=${databasename[1]}/Database=$DbName/g" /var/www/eye.api/appsettings.json
-          refreshPermissions "$$" & sudo sed -i "s/Password=${oldpassword[1]}/Password=$passw/g" /var/www/eye.api/appsettings.json
+          json_files=(/var/www/eye.api/appsettings.Development.json /var/www/eye.api/appsettings.json /srv/eye.notifier/appsettings.Development.json /srv/eye.notifier/appsettings.json /srv/eye.scheduler/appsettings.Development.json /srv/eye.scheduler/appsettings.json)
+          for ((i=0; i<${#json_files[@]} ; i++ )); do
+            cmd1=$(jq '.ConnectionStrings.PostgreConnection' ${json_files[$i]} | xargs )
+            IFS=";" read -a cmd1 <<< $cmd1
+            databasename=$(echo "${cmd1[2]}")
+            IFS="=" read -a databasename <<< $databasename
+            oldpassword=$(echo "${cmd1[4]}")
+            IFS="=" read -a oldpassword <<< $oldpassword
+            refreshPermissions "$$" & sudo sed -i "s/Database=${databasename[1]}/Database=$DbName/g" ${json_files[$i]}
+            refreshPermissions "$$" & sudo sed -i "s/Password=${oldpassword[1]}/Password=$passw/g" ${json_files[$i]}
+          done
 
-          cmd3=$(whoami)
-          #echo "$cmd3 is the username"
-          expected_path=/home/$cmd3/
-          #echo "Expected path is $expected_path"
-          #cmd5=$(jq '.UploadFilePath.FilePath' /var/www/eye.api/appsettings.Development.json | xargs)
-          refreshPermissions "$$" & sudo sed -i 's/\"FilePath\":.*/\"FilePath\": \"$expected_path\"/g' /var/www/eye.api/appsettings.Development.json
-
-          #jq '.userGeneration.VerificationUrlRoot' /var/www/eye.api/appsettings.Development.json | xargs
-
-    #      cmd=$(jq '.ConnectionStrings.PostgreConnection' /srv/eye.service/appsettings.Development.json | xargs )
-    #      IFS=";" read -a cmd <<< $cmd
-    #      databasename=$(echo "${cmd[2]}")
-    #      IFS="=" read -a databasename <<< $databasename
-    #      oldpassword=$(echo "${cmd[4]}")
-    #      IFS="=" read -a oldpassword <<< $oldpassword
-    #      #echo "---${databasename[1]}--- database is currently in used"
-    #      refreshPermissions "$$" & sudo sed -i "s/Database=${databasename[1]}/Database=$DbName/g" /srv/eye.service/appsettings.Development.json
-    #      refreshPermissions "$$" & sudo sed -i "s/Password=${oldpassword[1]}/Password=$passw/g" /srv/eye.service/appsettings.Development.json
-
-          cmd=$(jq '.ConnectionStrings.PostgreConnection' /var/www/eye.api/appsettings.Development.json | xargs )
-          IFS=";" read -a cmd <<< $cmd
-          databasename=$(echo "${cmd[2]}")
-          IFS="=" read -a databasename <<< $databasename
-          oldpassword=$(echo "${cmd[4]}")
-          IFS="=" read -a oldpassword <<< $oldpassword
-          #echo "---${databasename[1]}--- database is currently in used"
-          refreshPermissions "$$" & sudo sed -i "s/Database=${databasename[1]}/Database=$DbName/g" /var/www/eye.api/appsettings.Development.json
-          refreshPermissions "$$" & sudo sed -i "s/Password=${oldpassword[1]}/Password=$passw/g" /var/www/eye.api/appsettings.Development.json
+          cmd2=$(whoami)
+          expected_path=/home/$cmd2/gw-rmon/datafiles/
+          refreshPermissions "$$" & sudo sed -i "/\"FilePath/c\    \"FilePath\": \"${expected_path}\"" /var/www/eye.api/appsettings.Development.json
 
           #Reading the IP address of the PC
-          IP=$(ifconfig|grep 192.168.60)
-          SAVEIFS=$IFS
-          IFS=$' '
-          IP=($IP)
-          IFS=$SAVEIFS
+          IP=$(ifconfig | grep "inet ")
+          IFS=" " read -a IP <<< $IP
           #echo "${IP[1]}"
-
           #Changing the ipaddress in the config.js file
           refreshPermissions "$$" & sudo sed -i "2s/.*/      API_URL: 'http:\/\/${IP[1]}\/api',/g" /var/www/eye-ui/assets/config.js
           refreshPermissions "$$" & sudo sed -i "3s/.*/      WS_URL: 'http:\/\/${IP[1]}\/notify',/g" /var/www/eye-ui/assets/config.js
 
-          #Edit appsettings
-          #refreshPermissions "$$" & sudo sed -i '22s/.*/    "PostgreConnection": "Host=localhost;Port=5432;Database=${DB};Username=rmtest;Password=hotandcold;Pooling=true;MinPoolSize=1;MaxPoolSize=95;ConnectionLifeTime=15;"/' /srv/eye.service/appsettings.json
-          #refreshPermissions "$$" & sudo sed -i '22s/.*/    "PostgreConnection": "Host=localhost;Port=5432;Database=${DB};Username=rmtest;Password=hotandcold;Pooling=true;MinPoolSize=1;MaxPoolSize=95;ConnectionLifeTime=15;"/' /var/www/eye.api/appsettings.json
-          #refreshPermissions "$$" & sudo sed -i '22s/.*/    "PostgreConnection": "Host=localhost;Port=5432;Database=${DB};Username=rmtest;Password=hotandcold;Pooling=true;MinPoolSize=1;MaxPoolSize=95;ConnectionLifeTime=15;"/' /var/www/eye.api/appsettings.Development.json
-          #refreshPermissions "$$" & sudo sed -i '22s/.*/    "PostgreConnection": "Host=localhost;Port=5432;Database=${DB};Username=rmtest;Password=hotandcold;Pooling=true;MinPoolSize=1;MaxPoolSize=95;ConnectionLifeTime=15;"/' /srv/eye.service/appsettings.Development.json
-          #refreshPermissions "$$" & sudo sed -i "2s/.*/      API_URL: 'http://${IP}/api'/" /var/www/eye-ui/assets/config.js
-          #refreshPermissions "$$" & sudo sed -i "3s/.*/      WS_URL: 'http://${IP}/notify'/" /var/www/eye-ui/assets/config.js
+          #For editing the quartz.config file in scheduler
+          scheduler_files=(/srv/eye.scheduler/quartz.config)
+          for ((i=0; i<${#scheduler_files[@]} ; i++ )); do
+            cmd3=$(sed -n '6p' /srv/eye.scheduler/quartz.config)
+            IFS=";" read -a cmd3 <<< $cmd3
+            databasename=$(echo "${cmd3[2]}")
+            IFS="=" read -a databasename <<< $databasename
+            oldpassword=$(echo "${cmd3[4]}")
+            IFS="=" read -a oldpassword <<< $oldpassword
+            refreshPermissions "$$" & sudo sed -i "s/Database=${databasename[1]}/Database=$DbName/g" ${scheduler_files[$i]}
+            refreshPermissions "$$" & sudo sed -i "s/Password=${oldpassword[1]}/Password=$passw/g" ${scheduler_files[$i]}
+          done
 
-          #Coping the kestral-service
-          refreshPermissions "$$" & sudo cp services/kestrel-eyeapi.service /etc/systemd/system/
-          if [ -f /etc/systemd/system/kestrel-eyeapi.service ];then
-            echo -e "\e[1;32m Copied the kestral-eyeapi.service \e[0m"
-          else
-            echo -e "\e[1;31m Failed to copy kestral-eyeapi.service \e[0m"
-          fi
-
-          #Coping the eye-service
-          refreshPermissions "$$" & sudo cp services/kestrel-eye.service /etc/systemd/system/
-          if [ -f /etc/systemd/system/kestrel-eye.service ];then
-            echo -e "\e[1;32m Copied the kestral-eye.service \e[0m"
-          else
-            echo -e "\e[1;31m Failed to copy kestral-eye.service \e[0m"
-          fi
-
-          #Coping the eye-notify
-          refreshPermissions "$$" & sudo cp services/kestrel-eyenotify.service /etc/systemd/system/
-          if [ -f /etc/systemd/system/kestrel-eyenotify.service ];then
-            echo -e "\e[1;32m Copied the kestral-eye.notify \e[0m"
-          else
-            echo -e "\e[1;31m Failed to copy kestral-eye.notify \e[0m"
-          fi
-
-          #Coping the eye-scheduler
-          refreshPermissions "$$" & sudo cp services/kestrel-eyescheduler.service /etc/systemd/system/
-          if [ -f /etc/systemd/system/kestrel-eyescheduler.service ];then
-            echo -e "\e[1;32m Copied the kestral-eye.scheduler \e[0m"
-          else
-            echo -e "\e[1;31m Failed to copy kestral-eye.scheduler \e[0m"
-          fi
+          #Coping the service
+          services=(eye eyeapi eyenotify eyescheduler)
+          for ((i=0; i<${#services[@]} ; i++ )); do
+            refreshPermissions "$$" & sudo cp services/kestrel-${services[$i]}.service /etc/systemd/system/
+            if [ -f /etc/systemd/system/kestrel-${services[$i]}.service ];then
+              echo -e "\e[1;32m Copied the kestral-${services[$i]}.service \e[0m"
+            else
+              echo -e "\e[1;31m Failed to copy kestral-${services[$i]}.service \e[0m"
+            fi
+          done
 
           refreshPermissions "$$" & sudo systemctl daemon-reload
+          refreshPermissions "$$" & sudo chown root -R /srv/eye.communicator/
           refreshPermissions "$$" & sudo systemctl enable kestrel-eyeapi.service
           refreshPermissions "$$" & sudo systemctl enable kestrel-eye.service
           refreshPermissions "$$" & sudo systemctl enable kestrel-eyenotify.service
@@ -368,68 +256,21 @@ if [ -f /srv/eye.communicator/appsettings.json ];then
           refreshPermissions "$$" & sudo service kestrel-eyenotify start
           refreshPermissions "$$" & sudo service kestrel-eyescheduler start
 
-          #systemctl is-active --quiet kestrel-eyeapi.service && echo "$(tput setaf 2) kestral-eyeapi.service is running" || echo "$(tput setaf 1) kestral-eyeapi.service is NOT running"
-          eyeapistatus=$(sudo service kestrel-eyeapi status | grep Active:)
-          #echo "$eyeapistatus"
-          SAVEIFS=$IFS
-          IFS=$' '
-          eyeapistatus=($eyeapistatus)
-          IFS=$SAVEIFS
-          #echo "${eyeapistatus[1]}"
-          if [[ "${eyeapistatus[1]}" == "active" ]];then
-            echo -e "\e[1;32m Kestral.eyeapi service is running \e[0m"
-          else
-            echo -e "\e[1;31m Kestral.eyeapi service is not running \e[0m"
-          fi
-
-          eyenotifystatus=$(sudo service kestrel-eyenotify status | grep Active:)
-          SAVEIFS=$IFS
-          IFS=$' '
-          eyenotifystatus=($eyenotifystatus)
-          IFS=$SAVEIFS
-         if [[ "${eyenotifystatus[1]}" == "active" ]];then
-            echo -e "\e[1;32m Kestral.eyenotify service is running \e[0m"
-          else
-            echo -e "\e[1;31m Kestral.eyenotify service is not running \e[0m"
-          fi
-
-          eyeschedulerstatus=$(sudo service kestrel-eyescheduler status | grep Active:)
-          SAVEIFS=$IFS
-          IFS=$' '
-          eyeschedulerstatus=($eyeschedulerstatus)
-          IFS=$SAVEIFS
-         if [[ "${eyeschedulerstatus[1]}" == "active" ]];then
-            echo -e "\e[1;32m Kestral.eyescheduler service is running \e[0m"
-          else
-            echo -e "\e[1;31m Kestral.eyescheduler service is not running \e[0m"
-          fi
-
-          refreshPermissions "$$" & sudo chown root -R /srv/eye.communicator/
-          #refreshPermissions "$$" & sudo cp -Rv eye.service /etc/systemd/system/
-
-          #echo "Give me the user name"
-          #read input
-
-          #refreshPermissions "$$" & sudo usermod -a -G www-data $input
-          #refreshPermissions "$$" & sudo chmod 644 /etc/systemd/system/kestrel-eye.service
-          #refreshPermissions "$$" & sudo chmod 744 /srv/eye.service/eye.service
-
-
-          #Try to start the kestral-eye.service
-          refreshPermissions "$$" & sudo service kestrel-eye start
-          #systemctl is-active --quiet kestrel-eye && echo "$(tput setaf 2) kestral-eye.service is running" || echo "$(tput setaf 1) kestral-eye.service is NOT running"
-          eyestatus=$(sudo service kestrel-eye status | grep Active:)
-          #echo "$eyestatus"
-          SAVEIFS=$IFS
-          IFS=$' '
-          eyestatus=($eyestatus)
-          IFS=$SAVEIFS
-          #echo "${eyestatus[1]}"
-          if [[ "${eyestatus[1]}" == "active" ]];then
-            echo -e "\e[1;32m Kestral.eye service is running \e[0m"
-          else
-            echo -e "\e[1;31m Kestral.eye service is not running \e[0m"
-          fi
+          #Checking the status of services
+          services=(eyeapi eyenotify eyescheduler eye)
+          for ((i=0; i<${#services[@]} ; i++ )); do
+            eyestatus=$(sudo service kestrel-${services[$i]} status | grep Active:)
+            SAVEIFS=$IFS
+            IFS=$' '
+            eyestatus=($eyestatus)
+            IFS=$SAVEIFS
+            #echo "${eyestatus[1]}"
+            if [[ "${eyestatus[1]}" == "active" ]];then
+              echo -e "\e[1;32m Kestral.${services[$i]} service is running \e[0m"
+            else
+              echo -e "\e[1;31m Kestral.${services[$i]} service is not running \e[0m"
+            fi
+          done
         else
           echo -e "\e[1;31m Eye.scheduler files are not present \e[0m"
         fi
