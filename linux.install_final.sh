@@ -118,7 +118,7 @@ fi
 
 #RM UI software installation
 # Stopping and Removing the Services
-services=(eye eyeapi eyenotify eyescheduler)
+services=(eye eyeapi eyenotify eyescheduler eyedga eyeanalyticsBT eyeanalyticsMIO eyeanalyticsMIP eyeanalyticsOLC eyeanalyticsRL eyeanalyticsWHS)
 for ((i=0; i<${#services[@]} ; i++ )); do
   if [ -f /etc/systemd/system/kestrel-${services[$i]}.service ]; then
     echo -e "\e[1;32m ==========Stopping ${services[$i]}-service========== \e[0m"
