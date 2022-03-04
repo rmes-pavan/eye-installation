@@ -132,7 +132,7 @@ for ((i=0; i<${#services[@]} ; i++ )); do
 done
 
 #Removing & Copying files
-build_folder=(communicator notifier scheduler)
+build_folder=(communicator notifier scheduler dga analyticsBHIO analyticsBT analyticsMIO analyticsMIP analyticsOLC analyticsOT analyticsRL analyticsWHS)
 for ((i=0; i<${#build_folder[@]} ; i++ )); do
   #Removing communicator, notifier and scheduler files
   refreshPermissions "$$" & sudo rm -rf /srv/eye.${build_folder[$i]}/
@@ -143,6 +143,7 @@ for ((i=0; i<${#build_folder[@]} ; i++ )); do
   fi
   #Copying communicator, notifier and scheduler files
   refreshPermissions "$$" & sudo cp -r ${present_working_dir}/eye.${build_folder[$i]}/ /srv/
+  refreshPermissions "$$" & sudo chown root -R /srv/eye.${build_folder[$i]}/
   if [ -f /srv/eye.${build_folder[$i]}/appsettings.json ];then
     echo -e "\e[1;32m Eye.${build_folder[$i]} copied sucessfully \e[0m"
   else
@@ -188,101 +189,112 @@ else
   echo -e "\e[1;31m ==========Maps are not present========== \e[0m"
 fi
 
-if [ -f /srv/eye.communicator/appsettings.json ];then
-  if [ -f /var/www/eye.api/appsettings.json ];then
-    if [ -f /var/www/eye-ui/assets/config.js ];then
-      if [ -f /srv/eye.notifier/appsettings.json ];then
-        if [ -f /srv/eye.scheduler/appsettings.json ];then
-          #Reading the .json files and changing the database name and the password
-          json_files=(/var/www/eye.api/appsettings.Development.json /var/www/eye.api/appsettings.json /srv/eye.notifier/appsettings.Development.json /srv/eye.notifier/appsettings.json /srv/eye.scheduler/appsettings.Development.json /srv/eye.scheduler/appsettings.json)
-          for ((i=0; i<${#json_files[@]} ; i++ )); do
-            cmd1=$(jq '.ConnectionStrings.PostgreConnection' ${json_files[$i]} | xargs )
-            IFS=";" read -a cmd1 <<< $cmd1
-            databasename=$(echo "${cmd1[2]}")
-            IFS="=" read -a databasename <<< $databasename
-            oldpassword=$(echo "${cmd1[4]}")
-            IFS="=" read -a oldpassword <<< $oldpassword
-            refreshPermissions "$$" & sudo sed -i "s/Database=${databasename[1]}/Database=$DbName/g" ${json_files[$i]}
-            refreshPermissions "$$" & sudo sed -i "s/Password=${oldpassword[1]}/Password=$passw/g" ${json_files[$i]}
-          done
-
-          cmd2=$(whoami)
-          expected_path=/home/$cmd2/gw-rmon/datafiles/
-          refreshPermissions "$$" & sudo sed -i "/\"FilePath/c\    \"FilePath\": \"${expected_path}\"" /var/www/eye.api/appsettings.Development.json
-
-          #Reading the IP address of the PC
-          IP=$(ifconfig | grep "inet ")
-          IFS=" " read -a IP <<< $IP
-          #echo "${IP[1]}"
-          #Changing the ipaddress in the config.js file
-          refreshPermissions "$$" & sudo sed -i "2s/.*/      API_URL: 'http:\/\/${IP[1]}\/api',/g" /var/www/eye-ui/assets/config.js
-          refreshPermissions "$$" & sudo sed -i "3s/.*/      WS_URL: 'http:\/\/${IP[1]}\/notify',/g" /var/www/eye-ui/assets/config.js
-
-          #For editing the quartz.config file in scheduler
-          scheduler_files=(/srv/eye.scheduler/quartz.config)
-          for ((i=0; i<${#scheduler_files[@]} ; i++ )); do
-            cmd3=$(sed -n '6p' /srv/eye.scheduler/quartz.config)
-            IFS=";" read -a cmd3 <<< $cmd3
-            databasename=$(echo "${cmd3[2]}")
-            IFS="=" read -a databasename <<< $databasename
-            oldpassword=$(echo "${cmd3[4]}")
-            IFS="=" read -a oldpassword <<< $oldpassword
-            refreshPermissions "$$" & sudo sed -i "s/Database=${databasename[1]}/Database=$DbName/g" ${scheduler_files[$i]}
-            refreshPermissions "$$" & sudo sed -i "s/Password=${oldpassword[1]}/Password=$passw/g" ${scheduler_files[$i]}
-          done
-
-          #Coping the service
-          services=(eye eyeapi eyenotify eyescheduler)
-          for ((i=0; i<${#services[@]} ; i++ )); do
-            refreshPermissions "$$" & sudo cp services/kestrel-${services[$i]}.service /etc/systemd/system/
-            if [ -f /etc/systemd/system/kestrel-${services[$i]}.service ];then
-              echo -e "\e[1;32m Copied the kestral-${services[$i]}.service \e[0m"
-            else
-              echo -e "\e[1;31m Failed to copy kestral-${services[$i]}.service \e[0m"
-            fi
-          done
-
-          refreshPermissions "$$" & sudo systemctl daemon-reload
-          refreshPermissions "$$" & sudo chown root -R /srv/eye.communicator/
-          refreshPermissions "$$" & sudo systemctl enable kestrel-eyeapi.service
-          refreshPermissions "$$" & sudo systemctl enable kestrel-eye.service
-          refreshPermissions "$$" & sudo systemctl enable kestrel-eyenotify.service
-          refreshPermissions "$$" & sudo systemctl enable kestrel-eyescheduler.service
-          echo -e "\e[1;32m Daemon-reload completed \e[0m"
-
-          #Try to start the kestral-eyeapi.service
-          refreshPermissions "$$" & sudo service kestrel-eyeapi start
-          refreshPermissions "$$" & sudo service kestrel-eye start
-          refreshPermissions "$$" & sudo service kestrel-eyenotify start
-          refreshPermissions "$$" & sudo service kestrel-eyescheduler start
-
-          #Checking the status of services
-          services=(eyeapi eyenotify eyescheduler eye)
-          for ((i=0; i<${#services[@]} ; i++ )); do
-            eyestatus=$(sudo service kestrel-${services[$i]} status | grep Active:)
-            SAVEIFS=$IFS
-            IFS=$' '
-            eyestatus=($eyestatus)
-            IFS=$SAVEIFS
-            #echo "${eyestatus[1]}"
-            if [[ "${eyestatus[1]}" == "active" ]];then
-              echo -e "\e[1;32m Kestral.${services[$i]} service is running \e[0m"
-            else
-              echo -e "\e[1;31m Kestral.${services[$i]} service is not running \e[0m"
-            fi
-          done
-        else
-          echo -e "\e[1;31m Eye.scheduler files are not present \e[0m"
-        fi
-      else
-        echo -e "\e[1;31m Eye.notifier files are not present \e[0m"
-      fi
-    else
-      echo -e "\e[1;31m Eye-ui files are not present \e[0m"
-    fi
+#For checking the /srv/service Folder
+build_folder=(communicator notifier scheduler dga analyticsBHIO analyticsBT analyticsMIO analyticsMIP analyticsOLC analyticsOT analyticsRL analyticsWHS)
+for ((i=0; i<${#build_folder[@]} ; i++ )); do
+  if [ -f /srv/eye.${build_folder[$i]}/appsettings.json ]; then
+    continue
   else
-    echo -e "\e[1;31m Eye.api files are not present \e[0m"
+    echo -e "\e[1;31m Eye.${build_folder[$i]} files are not present \e[0m"
+    break
   fi
-else
-  echo -e "\e[1;31m Eye.service files are not present \e[0m"
-fi
+done
+
+#For Checking the /var/www/ folders
+build_folder=(/var/www/eye.api/appsettings.json /var/www/eye-ui/assets/config.js)
+for ((i=0; i<${#build_folder[@]} ; i++ )); do
+  if [ -f ${build_folder[$i]} ]; then
+    continue
+  else
+    echo -e "\e[1;31m Eye${build_folder[$i]} files are not present \e[0m"
+    break
+  fi
+done
+
+#Reading the .json files and changing the database name and the password for api and quartz
+json_files=(/var/www/eye.api/appsettings.Development.json /var/www/eye.api/appsettings.json /srv/eye.scheduler/quartz.config)
+for ((i=0; i<${#json_files[@]} ; i++ )); do
+  if [ ${json_files[$i]} == "/srv/eye.scheduler/quartz.config" ]; then
+    cmd1=$(sed -n '6p' /srv/eye.scheduler/quartz.config)
+  else
+    cmd1=$(jq '.ConnectionStrings.PostgreConnection' ${json_files[$i]} | xargs )
+  fi
+  IFS=";" read -a cmd1 <<< $cmd1
+  databasename=$(echo "${cmd1[2]}")
+  IFS="=" read -a databasename <<< $databasename
+  oldpassword=$(echo "${cmd1[4]}")
+  IFS="=" read -a oldpassword <<< $oldpassword
+  refreshPermissions "$$" & sudo sed -i "s/Database=${databasename[1]}/Database=$DbName/g" ${json_files[$i]}
+  refreshPermissions "$$" & sudo sed -i "s/Password=${oldpassword[1]}/Password=$passw/g" ${json_files[$i]}
+done
+
+#Reading the .json files and changing the database name and the password for services
+file_type=(appsettings.Development.json appsettings.json)
+for ((i=0; i<${#file_type[@]} ; i++ )); do
+    services=(communicator notifier scheduler dga analyticsBHIO analyticsBT analyticsMIO analyticsMIP analyticsOLC analyticsOT analyticsRL analyticsWHS)
+    for ((j=0; j<${#services[@]} ; j++ )); do
+      #echo "${services[$j]},,,,,${file_type[$i]}"
+      cmd2=$(jq '.ConnectionStrings.PostgreConnection' /srv/eye.${services[$j]}/${file_type[$i]} | xargs )
+      IFS=";" read -a cmd1 <<< $cmd2
+      databasename=$(echo "${cmd1[2]}")
+      IFS="=" read -a databasename <<< $databasename
+      oldpassword=$(echo "${cmd1[4]}")
+      IFS="=" read -a oldpassword <<< $oldpassword
+      refreshPermissions "$$" & sudo sed -i "s/Database=${databasename[1]}/Database=$DbName/g" /srv/eye.${services[$j]}/${file_type[$i]}
+      refreshPermissions "$$" & sudo sed -i "s/Password=${oldpassword[1]}/Password=$passw/g" /srv/eye.${services[$j]}/${file_type[$i]}
+    done
+done
+
+#TODO To replace the filepath  for all paths
+cmd2=$(whoami)
+expected_path=/home/$cmd2/gw-rmon/datafiles/
+refreshPermissions "$$" & sudo sed -i "/\"FilePath/c\    \"FilePath\": \"${expected_path}\"" /var/www/eye.api/appsettings.Development.json
+
+#Reading the IP address of the PC
+IP=$(ifconfig | grep "inet ")
+IFS=" " read -a IP <<< $IP
+#echo "${IP[1]}"
+#Changing the ipaddress in the config.js file
+refreshPermissions "$$" & sudo sed -i "2s/.*/      API_URL: 'http:\/\/${IP[1]}\/api',/g" /var/www/eye-ui/assets/config.js
+refreshPermissions "$$" & sudo sed -i "3s/.*/      WS_URL: 'http:\/\/${IP[1]}\/notify',/g" /var/www/eye-ui/assets/config.js
+
+#Coping the Service
+services=(eye eyeapi eyenotify eyescheduler eyedga eyeanalyticsBT eyeanalyticsMIO eyeanalyticsMIP eyeanalyticsOLC eyeanalyticsRL eyeanalyticsWHS)
+for ((i=0; i<${#services[@]} ; i++ )); do
+  refreshPermissions "$$" & sudo cp services/kestrel-${services[$i]}.service /etc/systemd/system/
+  if [ -f /etc/systemd/system/kestrel-${services[$i]}.service ];then
+    echo -e "\e[1;32m Copied the kestral-${services[$i]}.service \e[0m"
+  else
+    echo -e "\e[1;31m Failed to copy kestral-${services[$i]}.service \e[0m"
+  fi
+done
+
+#To Enable the Service
+refreshPermissions "$$" & sudo systemctl daemon-reload
+services=(eye eyeapi eyenotify eyescheduler eyedga eyeanalyticsBT eyeanalyticsMIO eyeanalyticsMIP eyeanalyticsOLC eyeanalyticsRL eyeanalyticsWHS)
+for ((i=0; i<${#services[@]} ; i++ )); do
+  refreshPermissions "$$" & sudo systemctl enable kestrel-${services[$i]}.service
+done
+echo -e "\e[1;32m Daemon-reload completed \e[0m"
+
+#To start the Service
+services=(eye eyeapi eyenotify eyescheduler eyedga eyeanalyticsBT eyeanalyticsMIO eyeanalyticsMIP eyeanalyticsOLC eyeanalyticsRL eyeanalyticsWHS)
+for ((i=0; i<${#services[@]} ; i++ )); do
+  refreshPermissions "$$" & sudo service kestrel-${services[$i]} start
+done
+
+#Checking the status of Service
+services=(eye eyeapi eyenotify eyescheduler eyedga eyeanalyticsBT eyeanalyticsMIO eyeanalyticsMIP eyeanalyticsOLC eyeanalyticsRL eyeanalyticsWHS)
+for ((i=0; i<${#services[@]} ; i++ )); do
+  eyestatus=$(sudo service kestrel-${services[$i]} status | grep Active:)
+  SAVEIFS=$IFS
+  IFS=$' '
+  eyestatus=($eyestatus)
+  IFS=$SAVEIFS
+  #echo "${eyestatus[1]}"
+  if [[ "${eyestatus[1]}" == "active" ]];then
+    echo -e "\e[1;32m Kestral.${services[$i]} service is running \e[0m"
+  else
+    echo -e "\e[1;31m Kestral.${services[$i]} service is not running \e[0m"
+  fi
+done
