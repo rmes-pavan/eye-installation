@@ -43,7 +43,7 @@ if psql -V | grep "13";then
     echo "Select one of the above database to be used"
     read db
     #Condition for checking the input is within the displayed file no or not
-    if (( $db>$i-1 ));then
+    if (( $db>$i ));then
       echo "Not a valid Input"
       exit 1
     fi
@@ -51,8 +51,7 @@ if psql -V | grep "13";then
 
    #For Selecting the default password OR giving the new password
     echo -e "\e[1;36m Default Passwords List \e[0m"
-    pword=(rmtest,hotandcold)
-    IFS="," read -a pword <<< $pword;
+    pword=(rmtest hotandcold)
     for ((i=0; i<${#pword[@]} ; i++ )); do
           echo "$i. ${pword[$i]}"
     done
@@ -94,7 +93,7 @@ else
   refreshPermissions "$$" & sudo -S -u postgres psql --command " grant all privileges on database rmdb1 to rmtest; "
   refreshPermissions "$$" & sudo -S -u postgres psql --command " CREATE EXTENSION IF NOT EXISTS pgagent "
   refreshPermissions "$$" & sudo service postgresql restart
-  pg_restore -h localhost -p 5432 -U postgres -d rmdb1 -W -v "R_U_S_Unit_Protocol_DF.backup"
+  pg_restore -h localhost -U postgres -d rmdb1 -W -v "R_U_S_Unit_Protocol_DF.backup"
   pgagent hostaddr=127.0.0.1 port=5432 dbname=postgres user=postgres
   DbName=rmdb1
   echo "@reboot pgagent hostaddr=127.0.0.1 port=5432 dbname=postgres user=postgres
@@ -139,10 +138,11 @@ for ((i=0; i<${#build_folder[@]} ; i++ )); do
   if [ -f /srv/eye.${build_folder[$i]}/appsettings.json ];then
     echo -e "\e[1;31m Failed to remove Eye.${build_folder[$i]} \e[0m"
   else
-    echo -e "\e[1;31m Eye.${build_folder[$i]} removed sucessfully \e[0m"
+    echo -e "\e[1;31m Eye.${build_folder[$i]} folder Not Present \e[0m"
   fi
   #Copying communicator, notifier and scheduler files
   refreshPermissions "$$" & sudo cp -r ${present_working_dir}/eye.${build_folder[$i]}/ /srv/
+  echo ${present_working_dir}
   refreshPermissions "$$" & sudo chown root -R /srv/eye.${build_folder[$i]}/
   if [ -f /srv/eye.${build_folder[$i]}/appsettings.json ];then
     echo -e "\e[1;32m Eye.${build_folder[$i]} copied sucessfully \e[0m"
@@ -156,7 +156,7 @@ refreshPermissions "$$" & sudo rm -rf /var/www/eye-ui/
 if [ -f /var/www/eye-ui/assets/config.js ];then
   echo -e "\e[1;31m Failed to remove Eye-ui \e[0m"
 else
-  echo -e "\e[1;31m Eye-ui removed sucessfully \e[0m"
+  echo -e "\e[1;31m Eye-ui folder Not Present \e[0m"
 fi
 #Copping UI files
 refreshPermissions "$$" & sudo cp -r ${present_working_dir}/eye-ui/ /var/www/
@@ -171,7 +171,7 @@ refreshPermissions "$$" & sudo rm -rf /var/www/eye.api/
 if [ -f /var/www/eye.api/appsettings.json ];then
   echo -e "\e[1;31m Failed to remove Eye.api \e[0m"
 else
-  echo -e "\e[1;31m Eye.api removed sucessfully \e[0m"
+  echo -e "\e[1;31m Eye.api folder Not Present \e[0m"
 fi
 #Copping Api files
 refreshPermissions "$$" & sudo cp -r ${present_working_dir}/eye.api/ /var/www/
@@ -190,13 +190,13 @@ else
 fi
 
 #For checking the /srv/service Folder
-build_folder=(communicator notifier scheduler dga analyticsBHIO analyticsBT analyticsMIO analyticsMIP analyticsOLC analyticsOT analyticsRL analyticsWHS)
+build_folder=(communicator notifier scheduler )
 for ((i=0; i<${#build_folder[@]} ; i++ )); do
   if [ -f /srv/eye.${build_folder[$i]}/appsettings.json ]; then
     continue
   else
     echo -e "\e[1;31m Eye.${build_folder[$i]} files are not present \e[0m"
-    break
+    exit 1
   fi
 done
 
@@ -207,7 +207,7 @@ for ((i=0; i<${#build_folder[@]} ; i++ )); do
     continue
   else
     echo -e "\e[1;31m Eye${build_folder[$i]} files are not present \e[0m"
-    break
+    exit 1
   fi
 done
 
@@ -245,10 +245,14 @@ for ((i=0; i<${#file_type[@]} ; i++ )); do
     done
 done
 
-#TODO To replace the filepath  for all paths
+#TODO To replace the filepath  for all paths/ All the paths will be removed but there will be 3 Filepath inputs needed to do so the following solution can be used
+#refreshPermissions "$$" & sudo sed -i '73s/.*/    \"Filepath1\": "expected_path1"/g' appsettings.Development.json
+#refreshPermissions "$$" & sudo sed -i "/\"Filepath1/c\    \"Filepath\": \"${expected_path}\"" appsettings.Development.json
+#TODO But for now replacing all the filepath with common path
 cmd2=$(whoami)
 expected_path=/home/$cmd2/gw-rmon/datafiles/
-refreshPermissions "$$" & sudo sed -i "/\"FilePath/c\    \"FilePath\": \"${expected_path}\"" /var/www/eye.api/appsettings.Development.json
+refreshPermissions "$$" & sudo sed -i "/.*Filepath.*/c\    \"Filepath\": \"${expected_path}\"" /var/www/eye.api/appsettings.Development.json # For Changing the Other FilePaths
+refreshPermissions "$$" & sudo sed -i "/\"FilePath/c\    \"FilePath\": \"${expected_path}\"" /var/www/eye.api/appsettings.Development.json #Only for changing the PRPD FilePath
 
 #Reading the IP address of the PC
 IP=$(ifconfig | grep "inet ")
