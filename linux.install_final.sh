@@ -69,10 +69,12 @@ if psql -V | grep "13";then
 else
   echo "The Installation is First Time Installation"
   echo "Updating and Upgrading the PC"
-  refreshPermissions "$$" & sudo apt-get update -y
-  refreshPermissions "$$" & sudo apt-get upgrade -y
+  #refreshPermissions "$$" & sudo apt-get update -y
+  #refreshPermissions "$$" & sudo apt-get upgrade -y
   echo "Installing Postgresql/Ngnix/Dotnet"
-  refreshPermissions "$$" & sudo dpkg -i *.deb
+  #Some Libraries require lib which are install later due to this the below libs dependencies also fails so that why running the package installion again
+  #TODO Not a Good way to handle this
+  refreshPermissions "$$" & sudo dpkg -i *.deb ; sudo dpkg -i *.deb
   refreshPermissions "$$" & sudo mkdir -p /opt/dotnet && sudo tar zxf aspnetcore-runtime-5.0.10-linux-x64.tar.gz -C /opt/dotnet
   refreshPermissions "$$" & sudo ln -s /opt/dotnet/dotnet /usr/bin
   refreshPermissions "$$" & sudo cp default.conf /etc/nginx/conf.d/
@@ -253,6 +255,17 @@ cmd2=$(whoami)
 expected_path=/home/$cmd2/gw-rmon/datafiles/
 refreshPermissions "$$" & sudo sed -i "/.*Filepath.*/c\    \"Filepath\": \"${expected_path}\"" /var/www/eye.api/appsettings.Development.json # For Changing the Other FilePaths
 refreshPermissions "$$" & sudo sed -i "/\"FilePath/c\    \"FilePath\": \"${expected_path}\"" /var/www/eye.api/appsettings.Development.json #Only for changing the PRPD FilePath
+
+#Steps For Configuring Reports
+killall node
+mkdir ~/gw-rmon/datafiles ; mkdir ~/gw-rmon/datafiles/reports
+expected_path=/home/$cmd2/gw-rmon/datafiles/reports
+refreshPermissions "$$" & sudo sed -i "/REPORT_FOLDER.*/cREPORT_FOLDER='${expected_path}'" ${present_working_dir}/eye-reports-ui/.env
+refreshPermissions "$$" & sudo sed -i "/API_URL.*/cAPI_URL='http://localhost/api/CustomReports'" ${present_working_dir}/eye-reports-ui/.env
+cd ${present_working_dir}/eye-reports-ui ; npm i --save ; npm audit fix --force
+#TODO nohup command should be run on reboot? if yes then it should be handled diferently as for now the reports comes with build
+nohup node ./bin/www &
+cd ${present_working_dir}
 
 #Reading the IP address of the PC
 IP=$(ifconfig | grep "inet ")
