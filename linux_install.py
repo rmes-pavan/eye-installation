@@ -38,8 +38,11 @@ print("...working")
 # Stop kestral service
 
 services = ["kestrel-eye","kestrel-eyeapi","kestrel-eyenotify","kestrel-eyescheduler","kestrel-eyeanalyticsBT",
-            "kestrel-eyeanalyticsMIO","kestrel-eyeanalyticsMIP","kestrel-eyeanalyticsOLC","kestrel-eyeanalyticsRL","kestrel-eyeanalyticsWHS"]
+            "kestrel-eyeanalyticsMIO","kestrel-eyeanalyticsMIP","kestrel-eyeanalyticsOLC","kestrel-eyeanalyticsRL","kestrel-eyeanalyticsWHS",
+            'kestrel-eyedga' ]
 # stop kestral services
+
+subprocess.call(f"sudo systemctl daemon-reload".format('testsim@123'), shell=True)
 
 for service in services:
     subprocess.call(f'sudo service {service} stop'.format('testsim@123'), shell=True)
@@ -66,17 +69,16 @@ subprocess.call('sudo cp -r eye-ui /var/www/'.format('testsim@123'), shell=True)
 subprocess.call('sudo cp -r eye.notifier /srv/'.format('testsim@123'), shell=True)
 subprocess.call('sudo cp -r eye.scheduler /srv/'.format('testsim@123'), shell=True)
 subprocess.call('sudo cp -r eye.analytics* /srv/'.format('testsim@123'), shell=True)
+subprocess.call('sudo cp -r eye.dga /srv/'.format('testsim@123'), shell=True)
 
 #coping the nginx config file
 subprocess.call('sudo cp services/nginx.conf /etc/nginx/'.format('testsim@123'), shell=True)
 
 
 #coping the service files
-subprocess.call('sudo cp services/kestrel-eyeapi.service /etc/systemd/system/'.format('testsim@123'), shell=True)
-subprocess.call('sudo cp services/kestrel-eye.service /etc/systemd/system/'.format('testsim@123'), shell=True)
-subprocess.call('sudo cp services/kestrel-eyenotify.service /etc/systemd/system/'.format('testsim@123'), shell=True)
-subprocess.call('sudo cp services/kestrel-eyescheduler.service /etc/systemd/system/'.format('testsim@123'), shell=True)
-subprocess.call('sudo cp services/kestrel-eyeanalytics* /etc/systemd/system/'.format('testsim@123'), shell=True)
+for service in services:
+    subprocess.call(f'sudo cp services/{service}.service /etc/systemd/system/'.format('testsim@123'), shell=True)
+
 
 #Coping maps ip any
 subprocess.call('sudo cp -rf maps /var/www/eye-ui/assets/'.format('testsim@123'), shell=True)
@@ -155,7 +157,7 @@ subprocess.call(f'sudo sed -i "3s/.*/      WS_URL: \'http:\/\/{Ip}\/notify\',/g\
 
 subprocess.call(f"sudo systemctl daemon-reload".format('testsim@123'), shell=True)
 for service in services:
-    subprocess.call(f"sudo systemctl enable {service}.service".format('testsim@123'), shell=True)
+    subprocess.call(f"sudo systemctl enable {service}".format('testsim@123'), shell=True)
 
 
 
@@ -165,10 +167,12 @@ for service in services:
 
 
 
+
+# removing th copied maps if they exist
+subprocess.call('sudo rm -rf maps/'.format('testsim@123'), shell=True)
 #
 #
 for service in services:
     subprocess.call(f'systemctl is-active --quiet {service}  && echo "$(tput setaf 2) {service} is running" || echo "$(tput setaf 1) {service} is NOT running"'.format('testsim@123'), shell=True)
 
 subprocess.call("echo '\e[0;37m'", shell=True)
-
