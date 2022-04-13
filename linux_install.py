@@ -94,6 +94,7 @@ paths = [r'/var/www/eye.api/appsettings.Development.json',
         r'/srv/eye.analyticsOLC/appsettings.Development.json',
         r'/srv/eye.analyticsRL/appsettings.Development.json',
         r'/srv/eye.analyticsWHS/appsettings.Development.json'
+        r'/srv/eye.dga/appsettings.json'
          ]
 
 dblocation = input("Is your db is in the same machine(y/n):-")
