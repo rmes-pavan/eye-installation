@@ -88,12 +88,12 @@ paths = [r'/var/www/eye.api/appsettings.Development.json',
          r'/var/www/eye.api/appsettings.json',
          r'/srv/eye.scheduler/appsettings.json',
          r'/srv/eye.scheduler/appsettings.Development.json',
-        r'/srv/eye.analyticsBT/appsettings.Development.json',
-        r'/srv/eye.analyticsMIO/appsettings.Development.json',
-        r'/srv/eye.analyticsMIP/appsettings.Development.json',
-        r'/srv/eye.analyticsOLC/appsettings.Development.json',
-        r'/srv/eye.analyticsRL/appsettings.Development.json',
-        r'/srv/eye.analyticsWHS/appsettings.Development.json',
+        r'/srv/eye.analyticsBT/appsettings.json',
+        r'/srv/eye.analyticsMIO/appsettings.json',
+        r'/srv/eye.analyticsMIP/appsettings.json',
+        r'/srv/eye.analyticsOLC/appsettings.json',
+        r'/srv/eye.analyticsRL/appsettings.json',
+        r'/srv/eye.analyticsWHS/appsettings.json',
         r'/srv/eye.dga/appsettings.json'
          ]
 
