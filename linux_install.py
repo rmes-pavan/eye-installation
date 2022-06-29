@@ -74,7 +74,7 @@ subprocess.call('sudo rm -rf /var/www/eye-ui/'.format('testsim@123'), shell=True
 subprocess.call('sudo rm -rf /srv/*'.format('testsim@123'), shell=True)
 
 #installing the npm install
-subprocess.call('npm i --prefix /srv/eye-reports-ui/'.format('testsim@123'), shell=True)
+subprocess.call('npm i --prefix eye-reports-ui/'.format('testsim@123'), shell=True)
 
 
 #putting all the files
