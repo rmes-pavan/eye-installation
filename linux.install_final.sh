@@ -119,7 +119,7 @@ fi
 
 #RM UI software installation
 # Stopping and Removing the Services
-services=(eye eyeapi eyenotify eyescheduler eyedga eyeanalyticsBT eyeanalyticsMIO eyeanalyticsMIP eyeanalyticsOLC eyeanalyticsRL eyeanalyticsWHS)
+services=(eye eyeapi eyenotify eyescheduler eyedga eyeanalyticsBT eyeanalyticsMIO eyeanalyticsMIP eyeanalyticsOLC eyeanalyticsRL eyeanalyticsWHS eyereport eyeanalyticsHI)
 for ((i=0; i<${#services[@]} ; i++ )); do
   if [ -f /etc/systemd/system/kestrel-${services[$i]}.service ]; then
     echo -e "\e[1;32m ==========Stopping ${services[$i]}-service========== \e[0m"
@@ -133,7 +133,7 @@ for ((i=0; i<${#services[@]} ; i++ )); do
 done
 
 #Removing & Copying files
-build_folder=(communicator notifier scheduler dga analyticsBHIO analyticsBT analyticsMIO analyticsMIP analyticsOLC analyticsOT analyticsRL analyticsWHS)
+build_folder=(communicator notifier scheduler dga analyticsHI analyticsBT analyticsMIO analyticsMIP analyticsOLC analyticsRL analyticsWHS)
 for ((i=0; i<${#build_folder[@]} ; i++ )); do
   #Removing communicator, notifier and scheduler files
   refreshPermissions "$$" & sudo rm -rf /srv/eye.${build_folder[$i]}/
@@ -144,7 +144,6 @@ for ((i=0; i<${#build_folder[@]} ; i++ )); do
   fi
   #Copying communicator, notifier and scheduler files
   refreshPermissions "$$" & sudo cp -r ${present_working_dir}/eye.${build_folder[$i]}/ /srv/
-  echo ${present_working_dir}
   refreshPermissions "$$" & sudo chown root -R /srv/eye.${build_folder[$i]}/
   if [ -f /srv/eye.${build_folder[$i]}/appsettings.json ];then
     echo -e "\e[1;32m Eye.${build_folder[$i]} copied sucessfully \e[0m"
@@ -152,6 +151,13 @@ for ((i=0; i<${#build_folder[@]} ; i++ )); do
     echo -e "\e[1;31m Failed to copy Eye.${build_folder[$i]} \e[0m"
   fi
 done
+
+#Removing Eye-Reports-UI
+cd ${present_working_dir}/eye-reports-ui ; npm i --save ; npm audit fix --force
+cd ${present_working_dir}
+refreshPermissions "$$" & sudo rm -rf /srv/eye-reports-ui/
+refreshPermissions "$$" & sudo cp -r ${present_working_dir}/eye-reports-ui/ /srv/
+refreshPermissions "$$" & sudo chown root -R /srv/eye-reports-ui/
 
 #Removing UI files
 refreshPermissions "$$" & sudo rm -rf /var/www/eye-ui/
@@ -233,7 +239,7 @@ done
 #Reading the .json files and changing the database name and the password for services
 file_type=(appsettings.Development.json appsettings.json)
 for ((i=0; i<${#file_type[@]} ; i++ )); do
-    services=(communicator notifier scheduler dga analyticsBT analyticsMIO analyticsMIP analyticsOLC analyticsHI analyticsRL analyticsWHS)
+    services=(communicator notifier scheduler dga analyticsBT analyticsMIO analyticsMIP analyticsOLC analyticsRL analyticsWHS analyticsHI)
     for ((j=0; j<${#services[@]} ; j++ )); do
       #echo "${services[$j]},,,,,${file_type[$i]}"
       cmd2=$(jq '.ConnectionStrings.PostgreConnection' /srv/eye.${services[$j]}/${file_type[$i]} | xargs )
@@ -257,15 +263,13 @@ refreshPermissions "$$" & sudo sed -i "/.*Filepath.*/c\    \"Filepath\": \"${exp
 refreshPermissions "$$" & sudo sed -i "/\"FilePath/c\    \"FilePath\": \"${expected_path}\"" /var/www/eye.api/appsettings.Development.json #Only for changing the PRPD FilePath
 
 #Steps For Configuring Reports
-killall node
+#killall node
 mkdir ~/gw-rmon/datafiles ; mkdir ~/gw-rmon/datafiles/reports
 expected_path=/home/$cmd2/gw-rmon/datafiles/reports
 #refreshPermissions "$$" & sudo sed -i "/REPORT_FOLDER.*/cREPORT_FOLDER='${expected_path}'" ${present_working_dir}/eye-reports-ui/.env
 #refreshPermissions "$$" & sudo sed -i "/API_URL.*/cAPI_URL='http://localhost/api/CustomReports'" ${present_working_dir}/eye-reports-ui/.env
-#cd ${present_working_dir}/eye-reports-ui ; npm i --save ; npm audit fix --force
 #TODO nohup command should be run on reboot? if yes then it should be handled diferently as for now the reports comes with build
 #nohup node ./bin/www &
-cd ${present_working_dir}
 
 #Reading the IP address of the PC
 IP=$(ifconfig | grep "inet ")
@@ -276,7 +280,7 @@ refreshPermissions "$$" & sudo sed -i "2s/.*/      API_URL: 'http:\/\/${IP[1]}\/
 refreshPermissions "$$" & sudo sed -i "3s/.*/      WS_URL: 'http:\/\/${IP[1]}\/notify',/g" /var/www/eye-ui/assets/config.js
 
 #Coping the Service
-services=(eye eyeapi eyenotify eyescheduler eyedga eyeanalyticsBT eyeanalyticsMIO eyeanalyticsMIP eyeanalyticsOLC eyeanalyticsRL eyeanalyticsWHS eyereport)
+services=(eye eyeapi eyenotify eyescheduler eyedga eyeanalyticsBT eyeanalyticsMIO eyeanalyticsMIP eyeanalyticsOLC eyeanalyticsRL eyeanalyticsWHS eyereport eyeanalyticsHI)
 for ((i=0; i<${#services[@]} ; i++ )); do
   refreshPermissions "$$" & sudo cp services/kestrel-${services[$i]}.service /etc/systemd/system/
   if [ -f /etc/systemd/system/kestrel-${services[$i]}.service ];then
