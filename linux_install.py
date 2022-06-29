@@ -2,13 +2,15 @@ import subprocess
 import json
 from getpass import getpass
 import os
+import datetime
 
 DbName = 'rmdb1'
 DbPassword = 'hotandcold'
 
+
 yes_no = input("Do you want to use the same Db that your are using previously y/n : ")
 
-if yes_no == 'y' or yes_no == 'Y' or yes_no == 'Yes' or yes_no == 'YES':
+if yes_no == 'y' or yes_no == 'Y' or yes_no == 'Yes' or yes_no == 'YES' or yes_no == 'yes':
     try:
         paths = [r'/var/www/eye.api/appsettings.Development.json', r'/var/www/eye.api/appsettings.json']
         for i in paths:
@@ -16,6 +18,7 @@ if yes_no == 'y' or yes_no == 'Y' or yes_no == 'Yes' or yes_no == 'YES':
             app = file1.read()
             app = json.loads(app)
             line = (app['ConnectionStrings']['PostgreConnection'].split(";"))
+            dbMachineIp = line[0].split("=")[1]
             DbName = line[2].split("=")[1]
             DbPassword = line[4].split("=")[1]
     except:
@@ -27,10 +30,23 @@ if yes_no == 'y' or yes_no == 'Y' or yes_no == 'Yes' or yes_no == 'YES':
         print("password will not be shown")
         DbPassword = input('Give the password of your data base: ')
 else:
-    d1 = subprocess.check_output(f' sudo -u postgres psql --command "SELECT datname FROM pg_database  WHERE datistemplate = false;"'.format('testsim@123'), shell=True)
-    d1 = d1.decode('UTF-8')
-    print(d1)
-    DbName = input('Give me the data base you have:')
+    dblocation = input("Is your db is in the same machine(y/n):-")
+
+    if (dblocation == "y" or dblocation == "yes" or dblocation == "Y" or dblocation == "yes"):
+        dbMachineIp = "localhost"
+    else:
+        dbMachineIp = input("give the Data - base machine IP:-")
+
+    try:
+        d1 = subprocess.check_output(
+            f'psql postgresql://postgres:hotandcold@{dbMachineIp}:5432 -c "SELECT datname FROM pg_database  WHERE datistemplate = false;"'.format(
+                'testsim@123'), shell=True)
+        d1 = d1.decode('UTF-8')
+        print(d1)
+    except:
+        print("not able to read the Db")
+
+    DbName = input('Give me the name of data base you have:')
     DbPassword = getpass('Give the password of your data base: ')
 
 
@@ -39,7 +55,7 @@ print("...working")
 
 services = ["kestrel-eye","kestrel-eyeapi","kestrel-eyenotify","kestrel-eyescheduler","kestrel-eyeanalyticsBT",
             "kestrel-eyeanalyticsMIO","kestrel-eyeanalyticsMIP","kestrel-eyeanalyticsOLC","kestrel-eyeanalyticsRL","kestrel-eyeanalyticsWHS",
-            'kestrel-eyedga' ]
+            'kestrel-eyedga','kestrel-eyereport','kestrel-eyeanalyticsHI']
 # stop kestral services
 
 subprocess.call(f"sudo systemctl daemon-reload".format('testsim@123'), shell=True)
@@ -53,13 +69,12 @@ for service in services:
 subprocess.call('sudo cp -rf /var/www/eye-ui/assets/maps .'.format('testsim@123'), shell=True)
 
 #removing all the services and apis files
-subprocess.call('sudo rm -rf /srv/eye.service/'.format('testsim@123'), shell=True)
-subprocess.call('sudo rm -rf /srv/eye.communicator/'.format('testsim@123'), shell=True)
 subprocess.call('sudo rm -rf /var/www/eye.api/'.format('testsim@123'), shell=True)
 subprocess.call('sudo rm -rf /var/www/eye-ui/'.format('testsim@123'), shell=True)
-subprocess.call('sudo rm -rf /srv/eye.notifier/'.format('testsim@123'), shell=True)
-subprocess.call('sudo rm -rf /srv/eye.scheduler/'.format('testsim@123'), shell=True)
 subprocess.call('sudo rm -rf /srv/*'.format('testsim@123'), shell=True)
+
+#installing the npm install
+subprocess.call('npm i --prefix /srv/eye-reports-ui/'.format('testsim@123'), shell=True)
 
 
 #putting all the files
@@ -70,6 +85,7 @@ subprocess.call('sudo cp -r eye.notifier /srv/'.format('testsim@123'), shell=Tru
 subprocess.call('sudo cp -r eye.scheduler /srv/'.format('testsim@123'), shell=True)
 subprocess.call('sudo cp -r eye.analytics* /srv/'.format('testsim@123'), shell=True)
 subprocess.call('sudo cp -r eye.dga /srv/'.format('testsim@123'), shell=True)
+subprocess.call('sudo cp -r eye-reports-ui /srv/'.format('testsim@123'), shell=True)
 
 #coping the nginx config file
 subprocess.call('sudo cp services/nginx.conf /etc/nginx/'.format('testsim@123'), shell=True)
@@ -94,15 +110,10 @@ paths = [r'/var/www/eye.api/appsettings.Development.json',
         r'/srv/eye.analyticsOLC/appsettings.json',
         r'/srv/eye.analyticsRL/appsettings.json',
         r'/srv/eye.analyticsWHS/appsettings.json',
-        r'/srv/eye.dga/appsettings.json'
+        r'/srv/eye.dga/appsettings.json',
+        r'/srv/eye.analyticsHI/appsettings.json',
          ]
 
-dblocation = input("Is your db is in the same machine(y/n):-")
-
-if (dblocation == "y" or dblocation =="yes" or dblocation == "Y" or dblocation =="yes"):
-    dbMachineIp = "localhost"
-else:
-    dbMachineIp = input("give the Data- base machine IP:-")
 
 for i in paths:
     file1 = open(i, 'r')
@@ -143,12 +154,12 @@ subprocess.call(f"sudo rm {fileDirectory}".format('testsim@123'), shell=True)
 c =subprocess.check_output('hostname -I'.format('testsim@123'), shell=True)
 Ip = c.decode('UTF-8')
 Ip = (Ip.split("\n")[0]).strip()
-hasDomain = input("Do you have any domain name(y/n):- ")
+# hasDomain = input("Do you have any domain name(y/n):- ")
 
-if(hasDomain == 'n' or hasDomain == 'N' or hasDomain == 'NO' or hasDomain == "no"):
-    pass
-else:
-    Ip = input("Give me your domain name:-")
+# if(hasDomain == 'n' or hasDomain == 'N' or hasDomain == 'NO' or hasDomain == "no"):
+#     pass
+# else:
+#     Ip = input("Give me your domain name:-")
 
 
 
@@ -177,3 +188,14 @@ for service in services:
     subprocess.call(f'systemctl is-active --quiet {service}  && echo "$(tput setaf 2) {service} is running" || echo "$(tput setaf 1) {service} is NOT running"'.format('testsim@123'), shell=True)
 
 subprocess.call("echo '\e[0;37m'", shell=True)
+
+#Log the build upgrade
+
+directory_path = os.getcwd()
+
+folder_name = os.path.basename(directory_path)
+
+with open("../build-log","a+") as f:
+    f.write(f'{datetime.datetime.now()} : {folder_name} \n')
+
+

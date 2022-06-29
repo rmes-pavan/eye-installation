@@ -114,7 +114,7 @@ if [ -f ~/gw-rmon/bins/watchdog-rmon ]; then
 else
   mkdir ~/rmontmp
   #mv ~/v-0-55-2021-10-13-rmon-gw-x86-bundle.tar.gz ~/rmontmp/
-  tar xvfz v-0-94-2022-01-20-rmon-gw-x86-bundle.tar.gz -C ~/rmontmp/ ; refreshPermissions "$$" & sudo ~/rmontmp/./install-rmon.sh
+  tar xvfz v-0-100-2022-03-29-rmon-gw-x86-bundle.tar.gz -C ~/rmontmp/ ; refreshPermissions "$$" & sudo ~/rmontmp/./install-rmon.sh
 fi
 
 #RM UI software installation
@@ -158,7 +158,7 @@ refreshPermissions "$$" & sudo rm -rf /var/www/eye-ui/
 if [ -f /var/www/eye-ui/assets/config.js ];then
   echo -e "\e[1;31m Failed to remove Eye-ui \e[0m"
 else
-  echo -e "\e[1;31m Eye-ui folder Not Present \e[0m"
+  echo -e "\e[1;31m Eye-ui folder Not Present /var/ folder \e[0m"
 fi
 #Copping UI files
 refreshPermissions "$$" & sudo cp -r ${present_working_dir}/eye-ui/ /var/www/
@@ -173,7 +173,7 @@ refreshPermissions "$$" & sudo rm -rf /var/www/eye.api/
 if [ -f /var/www/eye.api/appsettings.json ];then
   echo -e "\e[1;31m Failed to remove Eye.api \e[0m"
 else
-  echo -e "\e[1;31m Eye.api folder Not Present \e[0m"
+  echo -e "\e[1;31m Eye.api folder Not Present at /var/ folder \e[0m"
 fi
 #Copping Api files
 refreshPermissions "$$" & sudo cp -r ${present_working_dir}/eye.api/ /var/www/
@@ -233,7 +233,7 @@ done
 #Reading the .json files and changing the database name and the password for services
 file_type=(appsettings.Development.json appsettings.json)
 for ((i=0; i<${#file_type[@]} ; i++ )); do
-    services=(communicator notifier scheduler dga analyticsBHIO analyticsBT analyticsMIO analyticsMIP analyticsOLC analyticsOT analyticsRL analyticsWHS)
+    services=(communicator notifier scheduler dga analyticsBT analyticsMIO analyticsMIP analyticsOLC analyticsHI analyticsRL analyticsWHS)
     for ((j=0; j<${#services[@]} ; j++ )); do
       #echo "${services[$j]},,,,,${file_type[$i]}"
       cmd2=$(jq '.ConnectionStrings.PostgreConnection' /srv/eye.${services[$j]}/${file_type[$i]} | xargs )
@@ -260,11 +260,11 @@ refreshPermissions "$$" & sudo sed -i "/\"FilePath/c\    \"FilePath\": \"${expec
 killall node
 mkdir ~/gw-rmon/datafiles ; mkdir ~/gw-rmon/datafiles/reports
 expected_path=/home/$cmd2/gw-rmon/datafiles/reports
-refreshPermissions "$$" & sudo sed -i "/REPORT_FOLDER.*/cREPORT_FOLDER='${expected_path}'" ${present_working_dir}/eye-reports-ui/.env
-refreshPermissions "$$" & sudo sed -i "/API_URL.*/cAPI_URL='http://localhost/api/CustomReports'" ${present_working_dir}/eye-reports-ui/.env
-cd ${present_working_dir}/eye-reports-ui ; npm i --save ; npm audit fix --force
+#refreshPermissions "$$" & sudo sed -i "/REPORT_FOLDER.*/cREPORT_FOLDER='${expected_path}'" ${present_working_dir}/eye-reports-ui/.env
+#refreshPermissions "$$" & sudo sed -i "/API_URL.*/cAPI_URL='http://localhost/api/CustomReports'" ${present_working_dir}/eye-reports-ui/.env
+#cd ${present_working_dir}/eye-reports-ui ; npm i --save ; npm audit fix --force
 #TODO nohup command should be run on reboot? if yes then it should be handled diferently as for now the reports comes with build
-nohup node ./bin/www &
+#nohup node ./bin/www &
 cd ${present_working_dir}
 
 #Reading the IP address of the PC
@@ -276,7 +276,7 @@ refreshPermissions "$$" & sudo sed -i "2s/.*/      API_URL: 'http:\/\/${IP[1]}\/
 refreshPermissions "$$" & sudo sed -i "3s/.*/      WS_URL: 'http:\/\/${IP[1]}\/notify',/g" /var/www/eye-ui/assets/config.js
 
 #Coping the Service
-services=(eye eyeapi eyenotify eyescheduler eyedga eyeanalyticsBT eyeanalyticsMIO eyeanalyticsMIP eyeanalyticsOLC eyeanalyticsRL eyeanalyticsWHS)
+services=(eye eyeapi eyenotify eyescheduler eyedga eyeanalyticsBT eyeanalyticsMIO eyeanalyticsMIP eyeanalyticsOLC eyeanalyticsRL eyeanalyticsWHS eyereport)
 for ((i=0; i<${#services[@]} ; i++ )); do
   refreshPermissions "$$" & sudo cp services/kestrel-${services[$i]}.service /etc/systemd/system/
   if [ -f /etc/systemd/system/kestrel-${services[$i]}.service ];then
@@ -288,20 +288,20 @@ done
 
 #To Enable the Service
 refreshPermissions "$$" & sudo systemctl daemon-reload
-services=(eye eyeapi eyenotify eyescheduler eyedga eyeanalyticsBT eyeanalyticsMIO eyeanalyticsMIP eyeanalyticsOLC eyeanalyticsRL eyeanalyticsWHS)
+services=(eye eyeapi eyenotify eyescheduler eyedga eyeanalyticsBT eyeanalyticsMIO eyeanalyticsMIP eyeanalyticsOLC eyeanalyticsRL eyeanalyticsWHS eyereport eyeanalyticsHI)
 for ((i=0; i<${#services[@]} ; i++ )); do
   refreshPermissions "$$" & sudo systemctl enable kestrel-${services[$i]}.service
 done
 echo -e "\e[1;32m Daemon-reload completed \e[0m"
 
 #To start the Service
-services=(eye eyeapi eyenotify eyescheduler eyedga eyeanalyticsBT eyeanalyticsMIO eyeanalyticsMIP eyeanalyticsOLC eyeanalyticsRL eyeanalyticsWHS)
+services=(eye eyeapi eyenotify eyescheduler eyedga eyeanalyticsBT eyeanalyticsMIO eyeanalyticsMIP eyeanalyticsOLC eyeanalyticsRL eyeanalyticsWHS eyereport eyeanalyticsHI)
 for ((i=0; i<${#services[@]} ; i++ )); do
   refreshPermissions "$$" & sudo service kestrel-${services[$i]} start
 done
 
 #Checking the status of Service
-services=(eye eyeapi eyenotify eyescheduler eyedga eyeanalyticsBT eyeanalyticsMIO eyeanalyticsMIP eyeanalyticsOLC eyeanalyticsRL eyeanalyticsWHS)
+services=(eye eyeapi eyenotify eyescheduler eyedga eyeanalyticsBT eyeanalyticsMIO eyeanalyticsMIP eyeanalyticsOLC eyeanalyticsRL eyeanalyticsWHS eyereport eyeanalyticsHI)
 for ((i=0; i<${#services[@]} ; i++ )); do
   eyestatus=$(sudo service kestrel-${services[$i]} status | grep Active:)
   SAVEIFS=$IFS
