@@ -86,6 +86,7 @@ subprocess.call('sudo cp -r eye.scheduler /srv/'.format('testsim@123'), shell=Tr
 subprocess.call('sudo cp -r eye.analytics* /srv/'.format('testsim@123'), shell=True)
 subprocess.call('sudo cp -r eye.dga /srv/'.format('testsim@123'), shell=True)
 subprocess.call('sudo cp -r eye-reports-ui /srv/'.format('testsim@123'), shell=True)
+subprocess.call('sudo cp -r eye.analytic* /srv/'.format('testsim@123'), shell=True)
 
 #coping the nginx config file
 subprocess.call('sudo cp services/nginx.conf /etc/nginx/'.format('testsim@123'), shell=True)
