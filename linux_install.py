@@ -55,7 +55,7 @@ print("...working")
 
 services = ["kestrel-eye","kestrel-eyeapi","kestrel-eyenotify","kestrel-eyescheduler","kestrel-eyeanalyticsBT",
             "kestrel-eyeanalyticsMIO","kestrel-eyeanalyticsMIP","kestrel-eyeanalyticsOLC","kestrel-eyeanalyticsRL","kestrel-eyeanalyticsWHS",
-            'kestrel-eyedga','kestrel-eyereport','kestrel-eyeanalyticsHI','kestrel-eyeanalyticsHIDGA']
+            'kestrel-eyedga','kestrel-eyereport','kestrel-eyeanalyticsHI']
 # stop kestral services
 
 subprocess.call(f"sudo systemctl daemon-reload".format('testsim@123'), shell=True)
@@ -86,7 +86,6 @@ subprocess.call('sudo cp -r eye.scheduler /srv/'.format('testsim@123'), shell=Tr
 subprocess.call('sudo cp -r eye.analytics* /srv/'.format('testsim@123'), shell=True)
 subprocess.call('sudo cp -r eye.dga /srv/'.format('testsim@123'), shell=True)
 subprocess.call('sudo cp -r eye-reports-ui /srv/'.format('testsim@123'), shell=True)
-subprocess.call('sudo cp -r eye.analytic* /srv/'.format('testsim@123'), shell=True)
 
 #coping the nginx config file
 subprocess.call('sudo cp services/nginx.conf /etc/nginx/'.format('testsim@123'), shell=True)
@@ -113,7 +112,6 @@ paths = [r'/var/www/eye.api/appsettings.Development.json',
         r'/srv/eye.analyticsWHS/appsettings.json',
         r'/srv/eye.dga/appsettings.json',
         r'/srv/eye.analyticsHI/appsettings.json',
-        r'/srv/eye.analyticHIDGA/appsettings.json',
          ]
 
 
