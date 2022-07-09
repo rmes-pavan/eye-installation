@@ -55,7 +55,7 @@ print("...working")
 
 services = ["kestrel-eye","kestrel-eyeapi","kestrel-eyenotify","kestrel-eyescheduler","kestrel-eyeanalyticsBT",
             "kestrel-eyeanalyticsMIO","kestrel-eyeanalyticsMIP","kestrel-eyeanalyticsOLC","kestrel-eyeanalyticsRL","kestrel-eyeanalyticsWHS",
-            'kestrel-eyedga','kestrel-eyereport','kestrel-eyeanalyticsHI']
+            'kestrel-eyedga','kestrel-eyereport','kestrel-eyeanalyticsHI','kestrel-eyeanalyticsHIDGA']
 # stop kestral services
 
 subprocess.call(f"sudo systemctl daemon-reload".format('testsim@123'), shell=True)
@@ -112,6 +112,7 @@ paths = [r'/var/www/eye.api/appsettings.Development.json',
         r'/srv/eye.analyticsWHS/appsettings.json',
         r'/srv/eye.dga/appsettings.json',
         r'/srv/eye.analyticsHI/appsettings.json',
+        r'/srv/eye.analyticsHIDGA/appsettings.json',
          ]
 
 
