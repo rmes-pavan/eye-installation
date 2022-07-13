@@ -119,7 +119,7 @@ fi
 
 #RM UI software installation
 # Stopping and Removing the Services
-services=(eye eyeapi eyenotify eyescheduler eyedga eyeanalyticsBT eyeanalyticsMIO eyeanalyticsMIP eyeanalyticsOLC eyeanalyticsRL eyeanalyticsWHS eyereport eyeanalyticsHI)
+services=(eye eyeapi eyenotify eyescheduler eyedga eyeanalyticsBT eyeanalyticsMIO eyeanalyticsMIP eyeanalyticsOLC eyeanalyticsRL eyeanalyticsWHS eyereport eyeanalyticsHI  eyeanalyticsHIDGA)
 for ((i=0; i<${#services[@]} ; i++ )); do
   if [ -f /etc/systemd/system/kestrel-${services[$i]}.service ]; then
     echo -e "\e[1;32m ==========Stopping ${services[$i]}-service========== \e[0m"
@@ -133,7 +133,7 @@ for ((i=0; i<${#services[@]} ; i++ )); do
 done
 
 #Removing & Copying files
-build_folder=(communicator notifier scheduler dga analyticsHI analyticsBT analyticsMIO analyticsMIP analyticsOLC analyticsRL analyticsWHS)
+build_folder=(communicator notifier scheduler dga analyticsHI analyticsBT analyticsMIO analyticsMIP analyticsOLC analyticsRL analyticsWHS  analyticHIDGA)
 for ((i=0; i<${#build_folder[@]} ; i++ )); do
   #Removing communicator, notifier and scheduler files
   refreshPermissions "$$" & sudo rm -rf /srv/eye.${build_folder[$i]}/
@@ -239,7 +239,7 @@ done
 #Reading the .json files and changing the database name and the password for services
 file_type=(appsettings.Development.json appsettings.json)
 for ((i=0; i<${#file_type[@]} ; i++ )); do
-    services=(communicator notifier scheduler dga analyticsBT analyticsMIO analyticsMIP analyticsOLC analyticsRL analyticsWHS analyticsHI)
+    services=(communicator notifier scheduler dga analyticsBT analyticsMIO analyticsMIP analyticsOLC analyticsRL analyticsWHS analyticsHI  analyticHIDGA)
     for ((j=0; j<${#services[@]} ; j++ )); do
       #echo "${services[$j]},,,,,${file_type[$i]}"
       cmd2=$(jq '.ConnectionStrings.PostgreConnection' /srv/eye.${services[$j]}/${file_type[$i]} | xargs )
@@ -280,7 +280,7 @@ refreshPermissions "$$" & sudo sed -i "2s/.*/      API_URL: 'http:\/\/${IP[1]}\/
 refreshPermissions "$$" & sudo sed -i "3s/.*/      WS_URL: 'http:\/\/${IP[1]}\/notify',/g" /var/www/eye-ui/assets/config.js
 
 #Coping the Service
-services=(eye eyeapi eyenotify eyescheduler eyedga eyeanalyticsBT eyeanalyticsMIO eyeanalyticsMIP eyeanalyticsOLC eyeanalyticsRL eyeanalyticsWHS eyereport eyeanalyticsHI)
+services=(eye eyeapi eyenotify eyescheduler eyedga eyeanalyticsBT eyeanalyticsMIO eyeanalyticsMIP eyeanalyticsOLC eyeanalyticsRL eyeanalyticsWHS eyereport eyeanalyticsHI eyeanalyticsHIDGA)
 for ((i=0; i<${#services[@]} ; i++ )); do
   refreshPermissions "$$" & sudo cp services/kestrel-${services[$i]}.service /etc/systemd/system/
   if [ -f /etc/systemd/system/kestrel-${services[$i]}.service ];then
@@ -292,20 +292,20 @@ done
 
 #To Enable the Service
 refreshPermissions "$$" & sudo systemctl daemon-reload
-services=(eye eyeapi eyenotify eyescheduler eyedga eyeanalyticsBT eyeanalyticsMIO eyeanalyticsMIP eyeanalyticsOLC eyeanalyticsRL eyeanalyticsWHS eyereport eyeanalyticsHI)
+services=(eye eyeapi eyenotify eyescheduler eyedga eyeanalyticsBT eyeanalyticsMIO eyeanalyticsMIP eyeanalyticsOLC eyeanalyticsRL eyeanalyticsWHS eyereport eyeanalyticsHI eyeanalyticsHIDGA)
 for ((i=0; i<${#services[@]} ; i++ )); do
   refreshPermissions "$$" & sudo systemctl enable kestrel-${services[$i]}.service
 done
 echo -e "\e[1;32m Daemon-reload completed \e[0m"
 
 #To start the Service
-services=(eye eyeapi eyenotify eyescheduler eyedga eyeanalyticsBT eyeanalyticsMIO eyeanalyticsMIP eyeanalyticsOLC eyeanalyticsRL eyeanalyticsWHS eyereport eyeanalyticsHI)
+services=(eye eyeapi eyenotify eyescheduler eyedga eyeanalyticsBT eyeanalyticsMIO eyeanalyticsMIP eyeanalyticsOLC eyeanalyticsRL eyeanalyticsWHS eyereport eyeanalyticsHI eyeanalyticsHIDGA)
 for ((i=0; i<${#services[@]} ; i++ )); do
   refreshPermissions "$$" & sudo service kestrel-${services[$i]} start
 done
 
 #Checking the status of Service
-services=(eye eyeapi eyenotify eyescheduler eyedga eyeanalyticsBT eyeanalyticsMIO eyeanalyticsMIP eyeanalyticsOLC eyeanalyticsRL eyeanalyticsWHS eyereport eyeanalyticsHI)
+services=(eye eyeapi eyenotify eyescheduler eyedga eyeanalyticsBT eyeanalyticsMIO eyeanalyticsMIP eyeanalyticsOLC eyeanalyticsRL eyeanalyticsWHS eyereport eyeanalyticsHI eyeanalyticsHIDGA)
 for ((i=0; i<${#services[@]} ; i++ )); do
   eyestatus=$(sudo service kestrel-${services[$i]} status | grep Active:)
   SAVEIFS=$IFS
