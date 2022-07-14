@@ -113,7 +113,7 @@ paths = [r'/var/www/eye.api/appsettings.Development.json',
         r'/srv/eye.analyticsWHS/appsettings.json',
         r'/srv/eye.dga/appsettings.json',
         r'/srv/eye.analyticsHI/appsettings.json',
-        r'/srv/eye.analyticHIDGA/appsettings.json',
+        r'/srv/eye.analyticsHIDGA/appsettings.json',
          ]
 
 
