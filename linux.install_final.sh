@@ -133,7 +133,7 @@ for ((i=0; i<${#services[@]} ; i++ )); do
 done
 
 #Removing & Copying files
-build_folder=(communicator notifier scheduler dga analyticsHI analyticsBT analyticsMIO analyticsMIP analyticsOLC analyticsRL analyticsWHS  analyticHIDGA)
+build_folder=(communicator notifier scheduler dga analyticsHI analyticsBT analyticsMIO analyticsMIP analyticsOLC analyticsRL analyticsWHS  analyticsHIDGA)
 for ((i=0; i<${#build_folder[@]} ; i++ )); do
   #Removing communicator, notifier and scheduler files
   refreshPermissions "$$" & sudo rm -rf /srv/eye.${build_folder[$i]}/
@@ -239,7 +239,7 @@ done
 #Reading the .json files and changing the database name and the password for services
 file_type=(appsettings.Development.json appsettings.json)
 for ((i=0; i<${#file_type[@]} ; i++ )); do
-    services=(communicator notifier scheduler dga analyticsBT analyticsMIO analyticsMIP analyticsOLC analyticsRL analyticsWHS analyticsHI  analyticHIDGA)
+    services=(communicator notifier scheduler dga analyticsBT analyticsMIO analyticsMIP analyticsOLC analyticsRL analyticsWHS analyticsHI  analyticsHIDGA)
     for ((j=0; j<${#services[@]} ; j++ )); do
       #echo "${services[$j]},,,,,${file_type[$i]}"
       cmd2=$(jq '.ConnectionStrings.PostgreConnection' /srv/eye.${services[$j]}/${file_type[$i]} | xargs )
