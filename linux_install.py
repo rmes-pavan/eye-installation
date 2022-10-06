@@ -55,7 +55,7 @@ print("...working")
 
 services = ["kestrel-eye","kestrel-eyeapi","kestrel-eyenotify","kestrel-eyescheduler","kestrel-eyeanalyticsBT",
             "kestrel-eyeanalyticsMIO","kestrel-eyeanalyticsMIP","kestrel-eyeanalyticsOLC","kestrel-eyeanalyticsRL","kestrel-eyeanalyticsWHS",
-            'kestrel-eyedga','kestrel-eyereport','kestrel-eyeanalyticsHI','kestrel-eyeanalyticsHIDGA','kestrel-eyecalc','kestrel-eyetpcalc']
+            'kestrel-eyedga','kestrel-eyereport','kestrel-eyeanalyticsHI','kestrel-eyeanalyticsHIDGA','kestrel-eyecalc','kestrel-eyetpcalc','kestrel-eyestandardanalyticengine']
 # stop kestral services
 
 subprocess.call(f"sudo systemctl daemon-reload".format('testsim@123'), shell=True)
@@ -89,6 +89,7 @@ subprocess.call('sudo cp -r eye-reports-ui /srv/'.format('testsim@123'), shell=T
 subprocess.call('sudo cp -r eye.analytic* /srv/'.format('testsim@123'), shell=True)
 subprocess.call('sudo cp -r eye.commoncal /srv/'.format('testsim@123'), shell=True)
 subprocess.call('sudo cp -r eye.tpcalculator /srv/'.format('testsim@123'), shell=True)
+subprocess.call('sudo cp -r eye.standardanalyticengine /srv/'.format('testsim@123'), shell=True)
 
 #coping the nginx config file
 subprocess.call('sudo cp services/nginx.conf /etc/nginx/'.format('testsim@123'), shell=True)
@@ -107,17 +108,19 @@ paths = [r'/var/www/eye.api/appsettings.Development.json',
          r'/var/www/eye.api/appsettings.json',
          r'/srv/eye.scheduler/appsettings.json',
          r'/srv/eye.scheduler/appsettings.Development.json',
-        r'/srv/eye.analyticsBT/appsettings.json',
-        r'/srv/eye.analyticsMIO/appsettings.json',
-        r'/srv/eye.analyticsMIP/appsettings.json',
-        r'/srv/eye.analyticsOLC/appsettings.json',
-        r'/srv/eye.analyticsRL/appsettings.json',
-        r'/srv/eye.analyticsWHS/appsettings.json',
-        r'/srv/eye.dga/appsettings.json',
-        r'/srv/eye.analyticsHI/appsettings.json',
-        r'/srv/eye.analyticsHIDGA/appsettings.json',
+         r'/srv/eye.analyticsBT/appsettings.json',
+         r'/srv/eye.analyticsMIO/appsettings.json',
+         r'/srv/eye.analyticsMIP/appsettings.json',
+         r'/srv/eye.analyticsOLC/appsettings.json',
+         r'/srv/eye.analyticsRL/appsettings.json',
+         r'/srv/eye.analyticsWHS/appsettings.json',
+         r'/srv/eye.dga/appsettings.json',
+         r'/srv/eye.analyticsHI/appsettings.json',
+         r'/srv/eye.analyticsHIDGA/appsettings.json',
          r'/srv/eye.commoncal/appsettings.json',
-         r'/srv/eye.tpcalculator/appsettings.json'
+         r'/srv/eye.tpcalculator/appsettings.json',
+         r'/srv/eye.standardanalyticengine/appsettings.json',
+         r'/srv/eye.standardanalyticengine/appsettings.Development.json'
          ]
 
 
