@@ -67,9 +67,9 @@ for service in services:
 
 #Taking maps backup if any
 subprocess.call('sudo cp -rf /var/www/eye-ui/assets/maps .'.format('testsim@123'), shell=True)
-
 #removing all the services and apis files
 subprocess.call('sudo rm -rf /var/www/eye.api/'.format('testsim@123'), shell=True)
+subprocess.call('sudo rm -rf /var/www/eye.mobile-ui/'.format('testsim@123'), shell=True)
 subprocess.call('sudo rm -rf /var/www/eye-ui/'.format('testsim@123'), shell=True)
 subprocess.call('sudo rm -rf /srv/*'.format('testsim@123'), shell=True)
 
