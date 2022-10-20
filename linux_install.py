@@ -69,7 +69,7 @@ for service in services:
 subprocess.call('sudo cp -rf /var/www/eye-ui/assets/maps .'.format('testsim@123'), shell=True)
 #removing all the services and apis files
 subprocess.call('sudo rm -rf /var/www/eye.api/'.format('testsim@123'), shell=True)
-subprocess.call('sudo rm -rf /var/www/eye.mobile-ui/'.format('testsim@123'), shell=True)
+subprocess.call('sudo rm -rf /var/www/eyemobile-ui/'.format('testsim@123'), shell=True)
 subprocess.call('sudo rm -rf /var/www/eye-ui/'.format('testsim@123'), shell=True)
 subprocess.call('sudo rm -rf /srv/*'.format('testsim@123'), shell=True)
 
@@ -81,6 +81,7 @@ subprocess.call('npm i --prefix eye-reports-ui/'.format('testsim@123'), shell=Tr
 subprocess.call('sudo cp -r eye.communicator /srv/'.format('testsim@123'), shell=True)
 subprocess.call('sudo cp -r eye.api /var/www/'.format('testsim@123'), shell=True)
 subprocess.call('sudo cp -r eye-ui /var/www/'.format('testsim@123'), shell=True)
+subprocess.call('sudo cp -r eyemobile-ui /var/www/'.format('testsim@123'), shell=True)
 subprocess.call('sudo cp -r eye.notifier /srv/'.format('testsim@123'), shell=True)
 subprocess.call('sudo cp -r eye.scheduler /srv/'.format('testsim@123'), shell=True)
 subprocess.call('sudo cp -r eye.analytics* /srv/'.format('testsim@123'), shell=True)
