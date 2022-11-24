@@ -55,7 +55,7 @@ print("...working")
 
 services = ["kestrel-eye","kestrel-eyeapi","kestrel-eyenotify","kestrel-eyescheduler","kestrel-eyeanalyticsBT",
             "kestrel-eyeanalyticsMIO","kestrel-eyeanalyticsMIP","kestrel-eyeanalyticsOLC","kestrel-eyeanalyticsRL","kestrel-eyeanalyticsWHS",
-            'kestrel-eyedga','kestrel-eyereport','kestrel-eyeanalyticsHI','kestrel-eyeanalyticsHIDGA','kestrel-eyecalc','kestrel-eyetpcalc','kestrel-eyestandardanalyticengine','kestrel-eyetimeranalyticengine']
+            'kestrel-eyedga','kestrel-eyereport','kestrel-eyeanalyticsHI','kestrel-eyeanalyticsHIDGA','kestrel-eyecalc','kestrel-eyetpcalc','kestrel-eyestandardanalyticengine','kestrel-eyetimeranalyticengine','kestrel-eyedataimporter']
 # stop kestral services
 
 subprocess.call(f"sudo systemctl daemon-reload".format('testsim@123'), shell=True)
@@ -92,6 +92,7 @@ subprocess.call('sudo cp -r eye.commoncal /srv/'.format('testsim@123'), shell=Tr
 subprocess.call('sudo cp -r eye.tpcalculator /srv/'.format('testsim@123'), shell=True)
 subprocess.call('sudo cp -r eye.standardanalyticengine /srv/'.format('testsim@123'), shell=True)
 subprocess.call('sudo cp -r eye.timeranalyticengine /srv/'.format('testsim@123'), shell=True)
+subprocess.call('sudo cp -r eye.dataimporter /srv/'.format('testsim@123'), shell=True)
 
 
 #coping the nginx config file
@@ -124,7 +125,8 @@ paths = [r'/var/www/eye.api/appsettings.Development.json',
          r'/srv/eye.tpcalculator/appsettings.json',
          r'/srv/eye.standardanalyticengine/appsettings.json',
          r'/srv/eye.standardanalyticengine/appsettings.Development.json',
-         r'/srv/eye.timeranalyticengine/appsettings.json'
+         r'/srv/eye.timeranalyticengine/appsettings.json',
+         r'/srv/eye.dataimporter/appsettings.json'
          ]
 
 
