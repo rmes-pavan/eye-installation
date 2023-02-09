@@ -240,17 +240,17 @@ done
 file_type=(appsettings.Development.json appsettings.json)
 for ((i=0; i<${#file_type[@]} ; i++ )); do
   #TODO Change the name of the service Array
-    services=(communicator notifier scheduler dga analyticsHI analyticsBT analyticsMIO analyticsMIP analyticsOLC analyticsRL analyticsWHS  analyticsHIDGA commoncal tpcalculator standardanalyticengine timeranalyticengine dataimporter)
-    for ((j=0; j<${#services[@]} ; j++ )); do
-      #echo "${services[$j]},,,,,${file_type[$i]}"
-      cmd2=$(jq '.ConnectionStrings.PostgreConnection' /srv/eye.${services[$j]}/${file_type[$i]} | xargs )
+    build_folder=(communicator notifier scheduler dga analyticsHI analyticsBT analyticsMIO analyticsMIP analyticsOLC analyticsRL analyticsWHS  analyticsHIDGA commoncal tpcalculator standardanalyticengine timeranalyticengine dataimporter)
+    for ((j=0; j<${#build_folder[@]} ; j++ )); do
+      #echo "${build_folder[$j]},,,,,${file_type[$i]}"
+      cmd2=$(jq '.ConnectionStrings.PostgreConnection' /srv/eye.${build_folder[$j]}/${file_type[$i]} | xargs )
       IFS=";" read -a cmd1 <<< $cmd2
       databasename=$(echo "${cmd1[2]}")
       IFS="=" read -a databasename <<< $databasename
       oldpassword=$(echo "${cmd1[4]}")
       IFS="=" read -a oldpassword <<< $oldpassword
-      refreshPermissions "$$" & sudo sed -i "s/Database=${databasename[1]}/Database=$DbName/g" /srv/eye.${services[$j]}/${file_type[$i]}
-      refreshPermissions "$$" & sudo sed -i "s/Password=${oldpassword[1]}/Password=$passw/g" /srv/eye.${services[$j]}/${file_type[$i]}
+      refreshPermissions "$$" & sudo sed -i "s/Database=${databasename[1]}/Database=$DbName/g" /srv/eye.${build_folder[$j]}/${file_type[$i]}
+      refreshPermissions "$$" & sudo sed -i "s/Password=${oldpassword[1]}/Password=$passw/g" /srv/eye.${build_folder[$j]}/${file_type[$i]}
     done
 done
 
