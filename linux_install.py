@@ -4,12 +4,15 @@ from getpass import getpass
 import os
 import datetime
 
+# Default file
 DbName = 'rmdb1'
 DbPassword = 'hotandcold'
-
+dbMachineIp = "localhost"
 
 yes_no = input("Do you want to use the same Db that your are using previously y/n : ")
 
+
+#get the DB credentials either from user or from json file
 if yes_no == 'y' or yes_no == 'Y' or yes_no == 'Yes' or yes_no == 'YES' or yes_no == 'yes':
     try:
         paths = [r'/var/www/eye.api/appsettings.Development.json', r'/var/www/eye.api/appsettings.json']
@@ -50,14 +53,14 @@ else:
     DbPassword = getpass('Give the password of your data base: ')
 
 
-print("...working")
-# Stop kestral service
+print("...Running")
 
 services = ["kestrel-eye","kestrel-eyeapi","kestrel-eyenotify","kestrel-eyescheduler","kestrel-eyeanalyticsBT",
             "kestrel-eyeanalyticsMIO","kestrel-eyeanalyticsMIP","kestrel-eyeanalyticsOLC","kestrel-eyeanalyticsRL","kestrel-eyeanalyticsWHS",
             'kestrel-eyedga','kestrel-eyereport','kestrel-eyeanalyticsHI','kestrel-eyeanalyticsHIDGA','kestrel-eyecalc','kestrel-eyetpcalc','kestrel-eyestandardanalyticengine','kestrel-eyetimeranalyticengine','kestrel-eyedataimporter']
-# stop kestral services
 
+
+# stop kestral services
 subprocess.call(f"sudo systemctl daemon-reload".format('testsim@123'), shell=True)
 
 for service in services:
@@ -107,7 +110,7 @@ for service in services:
 #Coping maps ip any
 subprocess.call('sudo cp -rf maps /var/www/eye-ui/assets/'.format('testsim@123'), shell=True)
 
-
+# All the files appsettings.json files
 paths = [r'/var/www/eye.api/appsettings.Development.json',
          r'/var/www/eye.api/appsettings.json',
          r'/srv/eye.scheduler/appsettings.json',
@@ -129,7 +132,7 @@ paths = [r'/var/www/eye.api/appsettings.Development.json',
          r'/srv/eye.dataimporter/appsettings.json'
          ]
 
-
+#Rename the Database
 for i in paths:
     file1 = open(i, 'r')
     app = file1.read()
@@ -142,9 +145,7 @@ for i in paths:
     subprocess.call(f'sudo sed -i "s/Password={OldDbPassword}/Password={DbPassword}/g" {i}'.format('testsim@123'), shell=True)
     subprocess.call(f'sudo sed -i "s/Host={oldDbMachine}/Host={dbMachineIp}/g" {i}'.format('testsim@123'),shell=True)
 
-
-
-# writinh=g the quartz.config
+# writing the quartz.config
 subprocess.call('sudo rm /srv/eye.scheduler/quartz.config'.format('testsim@123'), shell=True)
 directory = os.getcwd()
 fileDirectory = directory+"/quartz.config"
@@ -154,7 +155,7 @@ Lines = ['org.quartz.threadPool.threadCount = 30 \n',
          'quartz.jobStore.type = Quartz.Impl.AdoJobStore.JobStoreTX, Quartz \n',
          'quartz.jobStore.tablePrefix = job_ \n',
          'quartz.jobStore.dataSource = myDS \n',
-         f'quartz.dataSource.myDS.connectionString = Host=127.0.0.1;Port=5432;Database={DbName};Username=rmtest;Password={DbPassword};Pooling=true;MinPoolSize=1;MaxPoolSize=95;ConnectionLifeTime=15; \n',
+         f'quartz.dataSource.myDS.connectionString = Host={dbMachineIp};Port=5432;Database={DbName};Username=rmtest;Password={DbPassword};Pooling=true;MinPoolSize=1;MaxPoolSize=95;ConnectionLifeTime=15; \n',
          'quartz.dataSource.myDS.provider = Npgsql \n',
          'quartz.serializer.type = json']
 file.writelines(Lines)
@@ -164,6 +165,7 @@ file.close()
 subprocess.call(f"sudo cp {fileDirectory} /srv/eye.scheduler/".format('testsim@123'), shell=True)
 #removing the file
 subprocess.call(f"sudo rm {fileDirectory}".format('testsim@123'), shell=True)
+
 
 # Getting the device ip;
 c =subprocess.check_output('hostname -I'.format('testsim@123'), shell=True)
@@ -180,6 +182,26 @@ Ip = (Ip.split("\n")[0]).strip()
 
 subprocess.call(f'sudo sed -i "2s/.*/      API_URL: \'http:\/\/{Ip}\/api\',/g" /var/www/eye-ui/assets/config.js'.format('testsim@123'), shell=True)
 subprocess.call(f'sudo sed -i "3s/.*/      WS_URL: \'http:\/\/{Ip}\/notify\',/g\" /var/www/eye-ui/assets/config.js'.format('testsim@123'), shell=True)
+
+
+
+#Coping the Files that are specfic
+if os.path.isfile("../backupFiles/filesTobeCp.txt"):
+    print("Coping the backup files")
+    with open("../backupFiles/filesTobeCp.txt", "r") as file:
+        # Read the entire contents of the file into a variable
+        for line in file:
+            copy_paths = line.split(":")
+            try:
+                src = copy_paths[0];
+                dist = copy_paths[1];
+                subprocess.call(f"sudo cp {src} {dist}".format('testsim@123'), shell=True)
+            except:
+                print(f"not able to copy {copy_paths}")
+else:
+    print("No file to copy the files")
+
+
 
 
 subprocess.call(f"sudo systemctl daemon-reload".format('testsim@123'), shell=True)
@@ -213,4 +235,14 @@ folder_name = os.path.basename(directory_path)
 with open("../build-log","a+") as f:
     f.write(f'{datetime.datetime.now()} : {folder_name} \n')
 
+# if os.path.isfile("./dbupdates.sql"):
+#     print(" Found db scripts file updating database...");
+#     try:
+#         output_sql = subprocess.check_output(f'psql postgresql://postgres:{DbPassword}@{dbMachineIp}:5432/{DbName} -f dbupdates.sql --set=ON_ERROR_STOP=on --echo-all >> dbupdates.log 2>&1'.format(
+#                 'testsim@123'), shell=True)
+#         d1 = output_sql.decode('UTF-8')
+#     except:
+#         print("Unable to run all the DB script provided, plz check the dbupdates.log")
+# else:
+#     print("\033[91m Not able to find Db updates file run manually.\033[00m")
 
