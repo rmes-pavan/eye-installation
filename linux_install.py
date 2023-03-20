@@ -15,7 +15,7 @@ yes_no = input("Do you want to use the same Db that your are using previously y/
 #get the DB credentials either from user or from json file
 if yes_no == 'y' or yes_no == 'Y' or yes_no == 'Yes' or yes_no == 'YES' or yes_no == 'yes':
     try:
-        paths = [r'/var/www/eye.api/appsettings.Development.json', r'/var/www/eye.api/appsettings.json']
+        paths = [r'/var/www/eye.api/appsettings.Development.json']
         for i in paths:
             file1 = open(i, 'r')
             app = file1.read()
