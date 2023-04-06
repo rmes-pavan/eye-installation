@@ -56,7 +56,7 @@ print("DB-IP:",f"\033[92m {dbMachineIp}\033[00m","DB-Name:",f"\033[92m {DbName}\
 
 #removing the files from Ui and showing mainanace page
 subprocess.call('sudo rm -rf /var/www/eye-ui/*'.format('testsim@123'), shell=True)
-#subprocess.call('sudo cp -r comingsoon/* /var/www/eye-ui/'.format('testsim@123'), shell=True)
+subprocess.call('sudo cp -r eye-maintanance/* /var/www/eye-ui/'.format('testsim@123'), shell=True)
 print("\033[92mUI will be under maintance,Installation in progress...\033[00m")
 
 services = ["kestrel-eye","kestrel-eyeapi","kestrel-eyenotify","kestrel-eyescheduler","kestrel-eyeanalyticsBT",
