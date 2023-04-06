@@ -9,13 +9,13 @@ DbName = 'rmdb1'
 DbPassword = 'hotandcold'
 dbMachineIp = "localhost"
 
-yes_no = input("Do you want to use the same Db that your are using previously y/n : ")
+yes_no = input("Do you want to use the same DB that your were using y/n : ")
 
 
 #get the DB credentials either from user or from json file
 if yes_no == 'y' or yes_no == 'Y' or yes_no == 'Yes' or yes_no == 'YES' or yes_no == 'yes':
     try:
-        paths = [r'/var/www/eye.api/appsettings.Development.json']
+        paths = [r'/var/www/eye.api/appsettings.json']
         for i in paths:
             file1 = open(i, 'r')
             app = file1.read()
@@ -36,7 +36,7 @@ else:
     dblocation = input("Is your db is in the same machine(y/n):-")
 
     if (dblocation == "y" or dblocation == "yes" or dblocation == "Y" or dblocation == "yes"):
-        dbMachineIp = "localhost"
+        dbMachineIp = "127.0.0.1"
     else:
         dbMachineIp = input("give the Data - base machine IP:-")
 
@@ -52,8 +52,12 @@ else:
     DbName = input('Give me the name of data base you have:')
     DbPassword = getpass('Give the password of your data base: ')
 
+print("DB-IP:",f"\033[92m {dbMachineIp}\033[00m","DB-Name:",f"\033[92m {DbName}\033[00m")
 
-print("...Running")
+#removing the files from Ui and showing mainanace page
+subprocess.call('sudo rm -rf /var/www/eye-ui/*'.format('testsim@123'), shell=True)
+#subprocess.call('sudo cp -r comingsoon/* /var/www/eye-ui/'.format('testsim@123'), shell=True)
+print("\033[92mUI will be under maintance,Installation in progress...\033[00m")
 
 services = ["kestrel-eye","kestrel-eyeapi","kestrel-eyenotify","kestrel-eyescheduler","kestrel-eyeanalyticsBT",
             "kestrel-eyeanalyticsMIO","kestrel-eyeanalyticsMIP","kestrel-eyeanalyticsOLC","kestrel-eyeanalyticsRL","kestrel-eyeanalyticsWHS",
@@ -70,10 +74,10 @@ for service in services:
 
 #Taking maps backup if any
 subprocess.call('sudo cp -rf /var/www/eye-ui/assets/maps .'.format('testsim@123'), shell=True)
+
 #removing all the services and apis files
 subprocess.call('sudo rm -rf /var/www/eye.api/'.format('testsim@123'), shell=True)
 subprocess.call('sudo rm -rf /var/www/eyemobile-ui/'.format('testsim@123'), shell=True)
-subprocess.call('sudo rm -rf /var/www/eye-ui/'.format('testsim@123'), shell=True)
 subprocess.call('sudo rm -rf /srv/*'.format('testsim@123'), shell=True)
 
 #installing the npm install
@@ -83,7 +87,6 @@ subprocess.call('npm i --prefix eye-reports-ui/'.format('testsim@123'), shell=Tr
 #putting all the files
 subprocess.call('sudo cp -r eye.communicator /srv/'.format('testsim@123'), shell=True)
 subprocess.call('sudo cp -r eye.api /var/www/'.format('testsim@123'), shell=True)
-subprocess.call('sudo cp -r eye-ui /var/www/'.format('testsim@123'), shell=True)
 subprocess.call('sudo cp -r eyemobile-ui /var/www/'.format('testsim@123'), shell=True)
 subprocess.call('sudo cp -r eye.notifier /srv/'.format('testsim@123'), shell=True)
 subprocess.call('sudo cp -r eye.scheduler /srv/'.format('testsim@123'), shell=True)
@@ -180,10 +183,6 @@ Ip = (Ip.split("\n")[0]).strip()
 
 
 
-subprocess.call(f'sudo sed -i "2s/.*/      API_URL: \'http:\/\/{Ip}\/api\',/g" /var/www/eye-ui/assets/config.js'.format('testsim@123'), shell=True)
-subprocess.call(f'sudo sed -i "3s/.*/      WS_URL: \'http:\/\/{Ip}\/notify\',/g\" /var/www/eye-ui/assets/config.js'.format('testsim@123'), shell=True)
-
-
 
 #Coping the Files that are specfic
 if os.path.isfile("../backupFiles/filesTobeCp.txt"):
@@ -199,7 +198,7 @@ if os.path.isfile("../backupFiles/filesTobeCp.txt"):
             except:
                 print(f"not able to copy {copy_paths}")
 else:
-    print("No file to copy the files")
+    print("No backupfiles to be copied")
 
 
 
@@ -215,7 +214,9 @@ for service in services:
     subprocess.call(f"sudo service {service} start".format('testsim@123'), shell=True)
 
 
-
+subprocess.call('sudo cp -r eye-ui /var/www/'.format('testsim@123'), shell=True)
+subprocess.call(f'sudo sed -i "2s/.*/      API_URL: \'http:\/\/{Ip}\/api\',/g" /var/www/eye-ui/assets/config.js'.format('testsim@123'), shell=True)
+subprocess.call(f'sudo sed -i "3s/.*/      WS_URL: \'http:\/\/{Ip}\/notify\',/g\" /var/www/eye-ui/assets/config.js'.format('testsim@123'), shell=True)
 
 # removing th copied maps if they exist
 subprocess.call('sudo rm -rf maps/'.format('testsim@123'), shell=True)
@@ -245,4 +246,3 @@ with open("../build-log","a+") as f:
 #         print("Unable to run all the DB script provided, plz check the dbupdates.log")
 # else:
 #     print("\033[91m Not able to find Db updates file run manually.\033[00m")
-
