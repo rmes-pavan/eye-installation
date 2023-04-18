@@ -54,6 +54,9 @@ else:
 
 print("DB-IP:",f"\033[92m {dbMachineIp}\033[00m","DB-Name:",f"\033[92m {DbName}\033[00m")
 
+#Taking maps backup if any
+subprocess.call('sudo cp -rf /var/www/eye-ui/assets/maps .'.format('testsim@123'), shell=True)
+
 #removing the files from Ui and showing mainanace page
 subprocess.call('sudo rm -rf /var/www/eye-ui/*'.format('testsim@123'), shell=True)
 subprocess.call('sudo cp -r eye-maintenance/* /var/www/eye-ui/'.format('testsim@123'), shell=True)
@@ -71,9 +74,6 @@ for service in services:
     subprocess.call(f'sudo service {service} stop'.format('testsim@123'), shell=True)
     subprocess.call(f'sudo rm -f /etc/systemd/system/{service}.service'.format('testsim@123'), shell=True)
 
-
-#Taking maps backup if any
-subprocess.call('sudo cp -rf /var/www/eye-ui/assets/maps .'.format('testsim@123'), shell=True)
 
 #removing all the services and apis files
 subprocess.call('sudo rm -rf /var/www/eye.api/'.format('testsim@123'), shell=True)
@@ -109,9 +109,6 @@ subprocess.call('sudo cp services/nginx.conf /etc/nginx/'.format('testsim@123'),
 for service in services:
     subprocess.call(f'sudo cp services/{service}.service /etc/systemd/system/'.format('testsim@123'), shell=True)
 
-
-#Coping maps ip any
-subprocess.call('sudo cp -rf maps /var/www/eye-ui/assets/'.format('testsim@123'), shell=True)
 
 # All the files appsettings.json files
 paths = [r'/var/www/eye.api/appsettings.Development.json',
@@ -181,6 +178,14 @@ Ip = (Ip.split("\n")[0]).strip()
 # else:
 #     Ip = input("Give me your domain name:-")
 
+subprocess.call('sudo cp -r eye-ui /var/www/'.format('testsim@123'), shell=True)
+
+#Coping maps ip any
+subprocess.call('sudo cp -rf maps /var/www/eye-ui/assets/'.format('testsim@123'), shell=True)
+
+subprocess.call(f'sudo sed -i "2s/.*/      API_URL: \'http:\/\/{Ip}\/api\',/g" /var/www/eye-ui/assets/config.js'.format('testsim@123'), shell=True)
+subprocess.call(f'sudo sed -i "3s/.*/      WS_URL: \'http:\/\/{Ip}\/notify\',/g\" /var/www/eye-ui/assets/config.js'.format('testsim@123'), shell=True)
+
 
 
 
@@ -213,10 +218,6 @@ subprocess.call(f"sudo service nginx start".format('testsim@123'), shell=True)
 for service in services:
     subprocess.call(f"sudo service {service} start".format('testsim@123'), shell=True)
 
-
-subprocess.call('sudo cp -r eye-ui /var/www/'.format('testsim@123'), shell=True)
-subprocess.call(f'sudo sed -i "2s/.*/      API_URL: \'http:\/\/{Ip}\/api\',/g" /var/www/eye-ui/assets/config.js'.format('testsim@123'), shell=True)
-subprocess.call(f'sudo sed -i "3s/.*/      WS_URL: \'http:\/\/{Ip}\/notify\',/g\" /var/www/eye-ui/assets/config.js'.format('testsim@123'), shell=True)
 
 # removing th copied maps if they exist
 subprocess.call('sudo rm -rf maps/'.format('testsim@123'), shell=True)
