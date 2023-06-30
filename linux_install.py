@@ -62,7 +62,7 @@ subprocess.call('sudo rm -rf /var/www/eye-ui/*'.format('testsim@123'), shell=Tru
 subprocess.call('sudo cp -r eye-maintenance/* /var/www/eye-ui/'.format('testsim@123'), shell=True)
 print("\033[92mUI will be under maintance,Installation in progress...\033[00m")
 
-services = ["kestrel-eye","kestrel-eyeapi","kestrel-eyenotify","kestrel-eyescheduler","kestrel-eyeanalyticsBT",
+services = ["kestrel-eye","kestrel-eyeapi","kestrel-eyenotify","kestrel-eyescheduler","kestrel-eyeanalyticsBT","kestrel-eyecommondata",
             "kestrel-eyeanalyticsMIO","kestrel-eyeanalyticsMIP","kestrel-eyeanalyticsOLC","kestrel-eyeanalyticsRL","kestrel-eyeanalyticsWHS",
             'kestrel-eyedga','kestrel-eyereport','kestrel-eyeanalyticsHI','kestrel-eyeanalyticsHIDGA','kestrel-eyecalc','kestrel-eyetpcalc','kestrel-eyestandardanalyticengine','kestrel-eyetimeranalyticengine','kestrel-eyedataimporter']
 
@@ -99,6 +99,7 @@ subprocess.call('sudo cp -r eye.tpcalculator /srv/'.format('testsim@123'), shell
 subprocess.call('sudo cp -r eye.standardanalyticengine /srv/'.format('testsim@123'), shell=True)
 subprocess.call('sudo cp -r eye.timeranalyticengine /srv/'.format('testsim@123'), shell=True)
 subprocess.call('sudo cp -r eye.dataimporter /srv/'.format('testsim@123'), shell=True)
+subprocess.call('sudo cp -r eye.commonDataService /srv/'.format('testsim@123'), shell=True)
 
 
 #coping the nginx config file
@@ -129,7 +130,8 @@ paths = [r'/var/www/eye.api/appsettings.Development.json',
          r'/srv/eye.standardanalyticengine/appsettings.json',
          r'/srv/eye.standardanalyticengine/appsettings.Development.json',
          r'/srv/eye.timeranalyticengine/appsettings.json',
-         r'/srv/eye.dataimporter/appsettings.json'
+         r'/srv/eye.dataimporter/appsettings.json',
+         r'/srv/eye.commonDataService/appsettings.json'
          ]
 
 #Rename the Database
