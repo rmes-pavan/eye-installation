@@ -3,54 +3,86 @@ import json
 from getpass import getpass
 import os
 import datetime
+import sys
+
+if (len(sys.argv) > 1 and sys.argv[1] == '--help'):
+    print("This is an installation for RMEYE Build")
+    print('python3 linux_install.py -h DbIpAddress -d dataBaseNAme -p rmtestUserPassword')
+    exit()
+
+argumentsData = sys.argv;
 
 # Default file
-DbName = 'rmdb1'
-DbPassword = 'hotandcold'
-dbMachineIp = "localhost"
+DbName = ''
+DbPassword = ''
+dbMachineIp = ''
 
-yes_no = input("Do you want to use the same DB that your were using y/n : ")
+
+#if the parameters are passed then only parse it take the data from it
+if(len(argumentsData) > 2):
+    for i in range(0,len(argumentsData)):
+        dataPoint = argumentsData[i];
+        try:
+            if (dataPoint == '-h') and (i + 1 < len(argumentsData)):
+                dbMachineIp = argumentsData[i + 1];
+            if dataPoint == '-d' and i + 1 < len(argumentsData):
+                DbName = argumentsData[i + 1];
+            if dataPoint == '-p' and i + 1 < len(argumentsData):
+                DbPassword = argumentsData[i + 1];
+        except:
+            print("invalid syntax to give command line parameters")
+            print('python3 linux_install.py -h DbIpAddress -d dataBaseNAme -p rmtestUserPassword')
+            exit()
+    if(DbName == '') or (DbPassword == '') or (dbMachineIp == ''):
+        print("invalid syntax to give command line parameters")
+        print('python3 linux_install.py -h DbIpAddress -d dataBaseNAme -p rmtestUserPassword')
+        exit()
+
 
 
 #get the DB credentials either from user or from json file
-if yes_no == 'y' or yes_no == 'Y' or yes_no == 'Yes' or yes_no == 'YES' or yes_no == 'yes':
-    try:
-        paths = [r'/var/www/eye.api/appsettings.json']
-        for i in paths:
-            file1 = open(i, 'r')
-            app = file1.read()
-            app = json.loads(app)
-            line = (app['ConnectionStrings']['PostgreConnection'].split(";"))
-            dbMachineIp = line[0].split("=")[1]
-            DbName = line[2].split("=")[1]
-            DbPassword = line[4].split("=")[1]
-    except:
-        d1 = subprocess.check_output(f' sudo -u postgres psql --command "SELECT datname FROM pg_database  WHERE datistemplate = false;"'.format('testsim@123'), shell=True)
-        d1 = d1.decode('UTF-8')
-        print(d1)
-        print("Not able to read previous json files")
-        DbName = input('Give me the data base you have:')
-        print("password will not be shown")
-        DbPassword = input('Give the password of your data base: ')
-else:
-    dblocation = input("Is your db is in the same machine(y/n):-")
-
-    if (dblocation == "y" or dblocation == "yes" or dblocation == "Y" or dblocation == "yes"):
-        dbMachineIp = "127.0.0.1"
+if(DbName == '' or DbPassword == '' or dbMachineIp == ''):
+    yes_no = input("Do you want to use the same DB that your were using y/n : ")
+    if yes_no == 'y' or yes_no == 'Y' or yes_no == 'Yes' or yes_no == 'YES' or yes_no == 'yes':
+        try:
+            paths = [r'/var/www/eye.api/appsettings.json']
+            for i in paths:
+                file1 = open(i, 'r')
+                app = file1.read()
+                app = json.loads(app)
+                line = (app['ConnectionStrings']['PostgreConnection'].split(";"))
+                dbMachineIp = line[0].split("=")[1]
+                DbName = line[2].split("=")[1]
+                DbPassword = line[4].split("=")[1]
+        except:
+            d1 = subprocess.check_output(
+                f' sudo -u postgres psql --command "SELECT datname FROM pg_database  WHERE datistemplate = false;"'.format(
+                    'testsim@123'), shell=True)
+            d1 = d1.decode('UTF-8')
+            print(d1)
+            print("Not able to read previous json files")
+            DbName = input('Give me the data base you have:')
+            print("password will not be shown")
+            DbPassword = input('Give the password of your data base: ')
     else:
-        dbMachineIp = input("give the Data - base machine IP:-")
+        dblocation = input("Is your db is in the same machine(y/n):-")
 
-    try:
-        d1 = subprocess.check_output(
-            f'psql postgresql://postgres:hotandcold@{dbMachineIp}:5432 -c "SELECT datname FROM pg_database  WHERE datistemplate = false;"'.format(
-                'testsim@123'), shell=True)
-        d1 = d1.decode('UTF-8')
-        print(d1)
-    except:
-        print("not able to read the Db")
+        if (dblocation == "y" or dblocation == "yes" or dblocation == "Y" or dblocation == "yes"):
+            dbMachineIp = "127.0.0.1"
+        else:
+            dbMachineIp = input("give the Data - base machine IP:-")
 
-    DbName = input('Give me the name of data base you have:')
-    DbPassword = getpass('Give the password of your data base: ')
+        try:
+            d1 = subprocess.check_output(
+                f'psql postgresql://postgres:hotandcold@{dbMachineIp}:5432 -c "SELECT datname FROM pg_database  WHERE datistemplate = false;"'.format(
+                    'testsim@123'), shell=True)
+            d1 = d1.decode('UTF-8')
+            print(d1)
+        except:
+            print("not able to read the Db")
+
+        DbName = input('Give me the name of data base you have:')
+        DbPassword = getpass('Give the password of your data base: ')
 
 print("DB-IP:",f"\033[92m {dbMachineIp}\033[00m","DB-Name:",f"\033[92m {DbName}\033[00m")
 
@@ -100,6 +132,7 @@ subprocess.call('sudo cp -r eye.standardanalyticengine /srv/'.format('testsim@12
 subprocess.call('sudo cp -r eye.timeranalyticengine /srv/'.format('testsim@123'), shell=True)
 subprocess.call('sudo cp -r eye.dataimporter /srv/'.format('testsim@123'), shell=True)
 subprocess.call('sudo cp -r eye.commonDataService /srv/'.format('testsim@123'), shell=True)
+
 
 
 #coping the nginx config file
